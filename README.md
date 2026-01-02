@@ -1,8 +1,8 @@
 ## 1. Project name
-**Plant Planner** – a web application that helps experienced indoor plant collectors keep their collections healthy through fast AI-powered identification, curated care guidance, and lightweight watering tracking.
+**Plant Planner** – a web application that helps experienced indoor plant collectors keep large collections on schedule through manual plant intake, AI-assisted watering recommendations, and lightweight calendar tracking.
 
 ## 2. Project description
-Plant Planner combines AI-based plant recognition (photo upload with <10 s response time), a vetted care knowledge base, and a calendar-driven watering workflow to increase plant survival while keeping operational costs predictable. Users can confirm or override AI suggestions, add plants manually, review care recommendations with full source attribution, and log/undo watering actions across daily and monthly views. The product stores only essential user data (email, password, nickname), enforces daily/ hourly limits to prevent abuse, and supports immediate, double-confirmed account deletion. See the [Product Requirements Document](./.ai/prd.md) for the full backlog and acceptance criteria.
+Plant Planner focuses on fast manual plant registration plus LLM-powered watering plan suggestions delivered within 5 seconds. Growers capture a species name (with optional nickname, description, purchase date, and photo), review frequency guidance with short justifications, and accept or override plans before they flow straight into monthly and daily calendars. The app tracks confirmations/undos, keeps entries editable, and enforces the 20 AI queries per user per hour limit with clear messaging and manual fallbacks. Secure Supabase-backed auth, double-confirmed account deletion, and compliant storage of minimal user data (email, password, nickname) round out the MVP. See the [Product Requirements Document](./.ai/prd.md) for the full backlog and acceptance criteria.
 
 ## 3. Tech stack
 - **Frontend:** Astro 5, React 19, TypeScript 5, Tailwind CSS 4, shadcn/ui, class-variance-authority, clsx, tailwind-merge, tw-animate-css, lucide-react.
@@ -43,13 +43,14 @@ Common tasks:
 
 ## 6. Project scope
 - **Core capabilities in scope:**
-  - AI-driven photo uploads with confirm/override flow, including manual fallbacks that do not count toward AI stats or limits.
-  - Care recommendation review with clear source links, approve/reject flow, and custom watering cadence overrides stored per plant.
-  - Calendars: monthly overview, daily execution list, single-plant monthly view, and a rolling 90-day watering history with edit/undo.
-  - Limit enforcement (20 AI queries/hour per IP), proactive user messaging, and compliant storage of user credentials.
-  - Privacy operations such as double-confirmed account deletion with immediate data purge.
-- **Explicitly out of scope for the MVP:** reminder notifications, fertilizing or non-watering tasks, external calendar integrations, native/mobile apps, multi-photo journals, advanced scheduling heuristics, exception handling for limits, telemetry on manual entries, and historical versioning of watering logs.
-- User stories US-001 to US-012 in the [PRD](./.ai/prd.md) detail the complete flow coverage for the MVP.
+  - Manual plant intake with mandatory species name, optional metadata (nickname, description, purchase date, photo), and automatic numbering for duplicates.
+  - Watering plan generation via LLM within 5 seconds, including frequency guidance and short justification.
+  - Approve/reject flow for watering plans with forced custom cadence entry on rejection and immediate calendar updates plus decision logging.
+  - Monthly and daily calendar views that refresh on every change, allow confirming/undoing waterings, and support entry edits.
+  - Limit enforcement of 20 AI queries per user per hour with upfront messaging, lockout notices, and manual-entry fallback.
+  - Account lifecycle and data management: secure auth, double-confirmed account deletion, plant detail editing, and compliant data storage.
+- **Explicitly out of scope for the MVP:** photo-based plant recognition, timeline/history views beyond the calendar, reminder notifications, non-watering task tracking, calendar sharing or external integrations, and native/mobile apps.
+- User stories US-001 to US-011 in the [PRD](./.ai/prd.md) detail the complete flow coverage for the MVP.
 
 ## 7. Project status
 - **Status:** In development (MVP planning and implementation).
