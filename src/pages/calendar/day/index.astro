@@ -1,0 +1,8 @@
+---
+import { getTodayCalendarDate } from '../../../lib/services/calendar/day-view-model'
+
+export const prerender = false
+
+const targetDate = getTodayCalendarDate()
+return Astro.redirect(`/calendar/day/${targetDate}`)
+---

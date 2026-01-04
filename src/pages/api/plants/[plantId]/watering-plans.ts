@@ -8,7 +8,7 @@ import {
   parsePlantIdParams,
   requireAuthUser,
 } from '../../../../lib/api/plants/get-plant-detail-request'
-import { parseWateringPlanHistoryQuery } from '../../../../lib/api/plants/get-watering-plan-history-request'
+import { parseWateringPlanHistoryQuery } from '../../../../lib/api/watering-plans/get-watering-plan-history-request'
 import { listWateringPlans } from '../../../../lib/services/watering-plans/list-watering-plans'
 import { HttpError, isHttpError } from '../../../../lib/http/errors'
 

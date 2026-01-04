@@ -584,6 +584,8 @@ This document proposes a REST API for the **Plant Planner** MVP, based on the cu
 - **Query params**:
   - `month` (required): `YYYY-MM` (e.g. `2026-01`)
   - `status=pending|completed|all` (default `pending`)
+- **Meta**:
+  - `request_id` UUID mirrored in server logs for tracing.
 - **Response 200**:
 
 ```json
@@ -603,13 +605,20 @@ This document proposes a REST API for the **Plant Planner** MVP, based on the cu
 - **Errors**:
   - `401 UNAUTHENTICATED`
   - `422 VALIDATION_ERROR`
+  - `500 CALENDAR_MONTH_QUERY_FAILED`
 
 #### GET `/api/calendar/day`
-- **Opis**: Daily list of watering tasks with status and plant details.
+- **Opis**: Daily list of watering tasks with status and plant details. Used by the “day view” timeline.
 - **Query params**:
-  - `date` (required): `YYYY-MM-DD`
+  - `date` (required): `YYYY-MM-DD` — must be a real calendar date.
   - `status=pending|completed|all` (default `all`)
-  - `sort=species_name|due_on`, `order=asc|desc`
+  - `sort=species_name|due_on` (default `due_on`)
+  - `order=asc|desc` (default `asc`)
+- **Behavior**:
+  - Always filters by the authenticated user ID and `watering_tasks.due_on = date`.
+  - `status=all` returns every task for that day; otherwise it applies an exact status filter.
+  - Sorting is deterministic: when `sort=species_name` it orders by the related plant species + duplicate index, then by `due_on` and `id`. When `sort=due_on` it orders by date first, then plant fields, then `id`.
+  - Response `meta` always contains a `request_id` UUID, mirrored in server logs for debugging.
 - **Response 200**:
 
 ```json
@@ -636,13 +645,14 @@ This document proposes a REST API for the **Plant Planner** MVP, based on the cu
     ]
   },
   "error": null,
-  "meta": {}
+  "meta": { "request_id": "req_c0ffee" }
 }
 ```
 
 - **Errors**:
+  - `400 VALIDATION_ERROR` (missing/invalid `date`, unsupported `status|sort|order`)
   - `401 UNAUTHENTICATED`
-  - `422 VALIDATION_ERROR`
+  - `500 CALENDAR_DAY_QUERY_FAILED`
 
 ---
 

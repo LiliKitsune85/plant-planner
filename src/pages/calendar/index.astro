@@ -1,0 +1,8 @@
+---
+import { getTodayCalendarMonth } from '../../lib/services/calendar/month-view-model'
+
+export const prerender = false
+
+const targetMonth = getTodayCalendarMonth()
+return Astro.redirect(`/calendar/${targetMonth}`)
+---

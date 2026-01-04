@@ -1,0 +1,26 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import { CalendarMonthView } from '../../components/calendar/month/CalendarMonthView'
+import {
+  normalizeCalendarStatusFilter,
+  isValidCalendarMonthString,
+} from '../../lib/services/calendar/month-view-model'
+import type { CalendarTaskStatusFilter } from '../../lib/services/calendar/types'
+
+export const prerender = false
+
+const monthParam = Astro.params.month ?? ''
+const statusParam = Astro.url.searchParams.get('status') ?? undefined
+const status = normalizeCalendarStatusFilter(
+  statusParam as CalendarTaskStatusFilter | undefined,
+)
+const isValidMonth = isValidCalendarMonthString(monthParam)
+const safeMonth = monthParam ?? ''
+const pageTitle = isValidMonth
+  ? `Kalendarz — ${safeMonth}`
+  : 'Kalendarz — niepoprawny miesiąc'
+---
+
+<Layout title={pageTitle}>
+  <CalendarMonthView month={safeMonth} status={status} client:load />
+</Layout>
