@@ -5,7 +5,9 @@ import {
   parseUpdatePlantRequest,
 } from '../../../../lib/api/plants/update-plant-request'
 import { parseDeletePlantRequest } from '../../../../lib/api/plants/delete-plant-request'
+import { parsePlantIdParams } from '../../../../lib/api/plants/get-plant-detail-request'
 import { deletePlant } from '../../../../lib/services/plants/delete-plant'
+import { getPlantDetail, mapPlantDetailRecordToDto } from '../../../../lib/services/plants/get-plant-detail'
 import { updatePlant } from '../../../../lib/services/plants/update-plant'
 import { HttpError, isHttpError } from '../../../../lib/http/errors'
 import type { PlantDetailDto } from '../../../../types'
@@ -67,6 +69,44 @@ export const DELETE: APIRoute = async ({ locals, params, request, url }) => {
     }
 
     console.error('Unhandled error in DELETE /api/plants/[plantId]', {
+      error,
+      plantId: params?.plantId,
+    })
+
+    return json(500, {
+      data: null,
+      error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' },
+      meta: {},
+    })
+  }
+}
+
+export const GET: APIRoute = async ({ locals, params, request }) => {
+  try {
+    const { plantId } = parsePlantIdParams(params)
+    const userId = await requireUserId(locals, request)
+
+    const record = await getPlantDetail(locals.supabase, { plantId, userId })
+    if (!record) {
+      throw new HttpError(404, 'Plant not found', 'PLANT_NOT_FOUND')
+    }
+
+    const detail = mapPlantDetailRecordToDto(record)
+    return json<PlantDetailDto>(200, { data: detail, error: null, meta: {} })
+  } catch (error) {
+    if (isHttpError(error)) {
+      return json(error.status, {
+        data: null,
+        error: {
+          code: error.code,
+          message: error.message,
+          details: error.details ?? null,
+        },
+        meta: {},
+      })
+    }
+
+    console.error('Unhandled error in GET /api/plants/[plantId]', {
       error,
       plantId: params?.plantId,
     })

@@ -1,0 +1,11 @@
+---
+import Layout from '../../layouts/Layout.astro'
+import { CreatePlantView } from '../../components/plants/new/CreatePlantView'
+
+export const prerender = false
+---
+
+<Layout title="Dodaj roślinę">
+  <CreatePlantView client:load />
+</Layout>
+

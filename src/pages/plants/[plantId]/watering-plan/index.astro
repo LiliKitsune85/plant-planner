@@ -1,0 +1,43 @@
+---
+import Layout from '../../../../../layouts/Layout.astro'
+import { PlantWateringPlanView } from '../../../../../components/plants/watering-plan/PlantWateringPlanView'
+import type { PlantWateringPlanMode } from '../../../../../components/plants/watering-plan/types'
+
+export const prerender = false
+
+const { plantId } = Astro.params
+const modeParam = Astro.url.searchParams.get('mode')
+const speciesNameParam = Astro.url.searchParams.get('species_name')
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+const normalizeMode = (value: string | null): PlantWateringPlanMode => {
+  return value === 'edit' ? 'edit' : 'suggest'
+}
+
+const normalizeSpeciesName = (value: string | null): string | undefined => {
+  if (!value) return undefined
+  const trimmed = value.trim()
+  if (!trimmed) return undefined
+  return trimmed.slice(0, 200)
+}
+
+const hasPlantId = typeof plantId === 'string' && plantId.length > 0
+const safePlantId = hasPlantId ? plantId : ''
+const isPlantIdValid = hasPlantId && UUID_REGEX.test(safePlantId)
+const mode = normalizeMode(modeParam)
+const initialSpeciesName = normalizeSpeciesName(speciesNameParam)
+
+const pageTitle = isPlantIdValid ? 'Plan podlewania' : 'Roślina — niepoprawny identyfikator'
+---
+
+<Layout title={pageTitle}>
+  <PlantWateringPlanView
+    client:load
+    plantId={safePlantId}
+    mode={mode}
+    initialSpeciesName={initialSpeciesName}
+  />
+</Layout>
+

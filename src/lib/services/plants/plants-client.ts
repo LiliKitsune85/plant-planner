@@ -1,4 +1,13 @@
-import type { PlantListDto } from '@/types'
+import type {
+  CreatePlantCommand,
+  CreatePlantResultDto,
+  DeletePlantResultDto,
+  PlantDetailDto,
+  PlantListDto,
+  UpdatePlantCommand,
+} from '@/types'
+
+import type { PlantSortField, SortOrder } from './types'
 
 type ApiErrorPayload = {
   code: string
@@ -12,7 +21,15 @@ type ApiEnvelope<TData> = {
   meta?: Record<string, unknown> | null
 }
 
-export type PlantsApiErrorKind = 'validation' | 'http' | 'network' | 'parse' | 'unknown'
+export type PlantsApiErrorKind =
+  | 'validation'
+  | 'unauthenticated'
+  | 'conflict'
+  | 'notFound'
+  | 'http'
+  | 'network'
+  | 'parse'
+  | 'unknown'
 
 type PlantsApiErrorOptions = {
   status?: number
@@ -56,14 +73,60 @@ const detectRequestId = (meta?: Record<string, unknown> | null): string | undefi
 }
 
 const determineErrorKind = (status?: number, code?: string): PlantsApiErrorKind => {
-  if (code === 'VALIDATION_ERROR') return 'validation'
+  if (code === 'INVALID_QUERY_PARAMS' || code === 'VALIDATION_ERROR') return 'validation'
+  if (code === 'UNAUTHENTICATED' || status === 401) return 'unauthenticated'
+  if (code === 'DUPLICATE_INDEX_CONFLICT' || status === 409) return 'conflict'
+  if (code === 'PLANT_NOT_FOUND' || status === 404) return 'notFound'
   if (status && status >= 400) return 'http'
   return 'unknown'
 }
 
+const detectNextCursor = (meta?: Record<string, unknown> | null): string | null => {
+  if (!meta) return null
+  const value = (meta as { next_cursor?: unknown }).next_cursor
+  return typeof value === 'string' ? value : null
+}
+
+type RequestPlantsApiResult<TData> = {
+  response: Response
+  envelope: ApiEnvelope<TData>
+}
+
+const requestPlantsApi = async <TData>(
+  input: RequestInfo | URL,
+  init: RequestInit = {},
+): Promise<RequestPlantsApiResult<TData>> => {
+  let response: Response
+  try {
+    response = await fetch(input, init)
+  } catch (error) {
+    throw new PlantsApiError('NETWORK_ERROR', 'Nie udało się połączyć z API roślin', {
+      kind: 'network',
+      cause: error,
+    })
+  }
+
+  let envelope: ApiEnvelope<TData>
+  try {
+    envelope = (await response.json()) as ApiEnvelope<TData>
+  } catch (error) {
+    throw new PlantsApiError('PARSE_ERROR', 'Nie udało się przetworzyć odpowiedzi API', {
+      status: response.status,
+      kind: 'parse',
+      cause: error,
+    })
+  }
+
+  return { response, envelope }
+}
+
 type ListPlantsParams = {
   q?: string
+  species?: string
+  sort?: PlantSortField
+  order?: SortOrder
   limit?: number
+  cursor?: string
 }
 
 type ListPlantsOptions = {
@@ -73,33 +136,166 @@ type ListPlantsOptions = {
 export const listPlants = async (
   params: ListPlantsParams,
   options: ListPlantsOptions = {},
-): Promise<{ data: PlantListDto; requestId?: string }> => {
+): Promise<{ data: PlantListDto; nextCursor: string | null; requestId?: string }> => {
   const query = buildQueryString({
     q: params.q,
+    species: params.species,
+    sort: params.sort,
+    order: params.order,
     limit: params.limit ? String(params.limit) : undefined,
+    cursor: params.cursor,
   })
 
-  let response: Response
-  try {
-    response = await fetch(`/api/plants${query}`, { signal: options.signal })
-  } catch (error) {
-    throw new PlantsApiError('NETWORK_ERROR', 'Nie udało się połączyć z API roślin', {
-      kind: 'network',
-      cause: error,
-    })
-  }
+  const { response, envelope } = await requestPlantsApi<PlantListDto>(`/api/plants${query}`, {
+    signal: options.signal,
+  })
+  const requestId = detectRequestId(envelope.meta ?? null)
+  const nextCursor = detectNextCursor(envelope.meta ?? null)
 
-  let envelope: ApiEnvelope<PlantListDto>
-  try {
-    envelope = (await response.json()) as ApiEnvelope<PlantListDto>
-  } catch (error) {
-    throw new PlantsApiError('PARSE_ERROR', 'Nie udało się przetworzyć odpowiedzi API', {
+  if (!response.ok || envelope.error || !envelope.data) {
+    const errorPayload = envelope.error
+    const code = errorPayload?.code ?? 'HTTP_ERROR'
+    const message =
+      errorPayload?.message ?? `Żądanie nie powiodło się (status ${response.status}).`
+    throw new PlantsApiError(code, message, {
       status: response.status,
-      kind: 'parse',
-      cause: error,
+      requestId,
+      details: errorPayload?.details,
+      kind: determineErrorKind(response.status, code),
     })
   }
 
+  return { data: envelope.data, nextCursor, requestId }
+}
+
+type CreatePlantOptions = {
+  signal?: AbortSignal
+}
+
+export const createPlant = async (
+  command: CreatePlantCommand,
+  options: CreatePlantOptions = {},
+): Promise<{ data: CreatePlantResultDto; requestId?: string }> => {
+  const { response, envelope } = await requestPlantsApi<CreatePlantResultDto>('/api/plants', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(command),
+    signal: options.signal,
+  })
+  const requestId = detectRequestId(envelope.meta ?? null)
+
+  if (!response.ok || envelope.error || !envelope.data) {
+    const errorPayload = envelope.error
+    const code = errorPayload?.code ?? 'HTTP_ERROR'
+    const message =
+      errorPayload?.message ?? `Żądanie nie powiodło się (status ${response.status}).`
+    throw new PlantsApiError(code, message, {
+      status: response.status,
+      requestId,
+      details: errorPayload?.details,
+      kind: determineErrorKind(response.status, code),
+    })
+  }
+
+  return { data: envelope.data, requestId }
+}
+
+type GetPlantDetailParams = {
+  plantId: string
+}
+
+type GetPlantDetailOptions = {
+  signal?: AbortSignal
+}
+
+export const getPlantDetail = async (
+  params: GetPlantDetailParams,
+  options: GetPlantDetailOptions = {},
+): Promise<{ data: PlantDetailDto; requestId?: string }> => {
+  const { response, envelope } = await requestPlantsApi<PlantDetailDto>(
+    `/api/plants/${params.plantId}`,
+    {
+      method: 'GET',
+      signal: options.signal,
+    },
+  )
+  const requestId = detectRequestId(envelope.meta ?? null)
+
+  if (!response.ok || envelope.error || !envelope.data) {
+    const errorPayload = envelope.error
+    const code = errorPayload?.code ?? 'HTTP_ERROR'
+    const message =
+      errorPayload?.message ?? `Żądanie nie powiodło się (status ${response.status}).`
+    throw new PlantsApiError(code, message, {
+      status: response.status,
+      requestId,
+      details: errorPayload?.details,
+      kind: determineErrorKind(response.status, code),
+    })
+  }
+
+  return { data: envelope.data, requestId }
+}
+
+type UpdatePlantParams = {
+  plantId: string
+  payload: UpdatePlantCommand
+}
+
+type UpdatePlantOptions = {
+  signal?: AbortSignal
+}
+
+export const updatePlant = async (
+  params: UpdatePlantParams,
+  options: UpdatePlantOptions = {},
+): Promise<{ data: PlantDetailDto; requestId?: string }> => {
+  const { response, envelope } = await requestPlantsApi<PlantDetailDto>(
+    `/api/plants/${params.plantId}`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params.payload),
+      signal: options.signal,
+    },
+  )
+  const requestId = detectRequestId(envelope.meta ?? null)
+
+  if (!response.ok || envelope.error || !envelope.data) {
+    const errorPayload = envelope.error
+    const code = errorPayload?.code ?? 'HTTP_ERROR'
+    const message =
+      errorPayload?.message ?? `Żądanie nie powiodło się (status ${response.status}).`
+    throw new PlantsApiError(code, message, {
+      status: response.status,
+      requestId,
+      details: errorPayload?.details,
+      kind: determineErrorKind(response.status, code),
+    })
+  }
+
+  return { data: envelope.data, requestId }
+}
+
+type DeletePlantOptions = {
+  signal?: AbortSignal
+}
+
+export const deletePlant = async (
+  plantId: string,
+  options: DeletePlantOptions = {},
+): Promise<{ data: DeletePlantResultDto; requestId?: string }> => {
+  const { response, envelope } = await requestPlantsApi<DeletePlantResultDto>(
+    `/api/plants/${plantId}?confirm=true`,
+    {
+      method: 'DELETE',
+      signal: options.signal,
+    },
+  )
   const requestId = detectRequestId(envelope.meta ?? null)
 
   if (!response.ok || envelope.error || !envelope.data) {

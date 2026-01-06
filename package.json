@@ -9,7 +9,8 @@
     "astro": "astro",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@astrojs/node": "^9.4.3",
@@ -17,6 +18,7 @@
     "@astrojs/sitemap": "^3.5.1",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-switch": "^1.2.6",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
     "@tailwindcss/vite": "^4.1.13",
@@ -51,7 +53,8 @@
     "husky": "9.1.7",
     "lint-staged": "15.5.0",
     "prettier-plugin-astro": "0.14.1",
-    "typescript-eslint": "8.28.0"
+    "typescript-eslint": "8.28.0",
+    "vitest": "^2.1.9"
   },
   "lint-staged": {
     "*.{ts,tsx,astro}": [

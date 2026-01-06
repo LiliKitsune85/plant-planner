@@ -1,0 +1,19 @@
+---
+import Layout from '../../../../layouts/Layout.astro'
+import { PlantEditView } from '../../../../components/plants/edit/PlantEditView'
+
+export const prerender = false
+
+const { plantId } = Astro.params
+
+if (!plantId) {
+  throw new Error('Parametr plantId jest wymagany dla widoku edycji rośliny.')
+}
+
+const pageTitle = 'Edycja rośliny'
+---
+
+<Layout title={pageTitle}>
+  <PlantEditView plantId={plantId} client:load />
+</Layout>
+
