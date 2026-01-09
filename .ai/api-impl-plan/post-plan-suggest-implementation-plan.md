@@ -228,14 +228,4 @@ Uwaga: dokładne wartości `status` zależą od `public.ai_request_status` w sch
      - rate-limit -> `429` z formatem ze spec (meta + error.details.unlock_at)
      - błędy -> wg sekcji 6
    - Dodać `Cache-Control: no-store` w odpowiedziach.
-8. **Testy / weryfikacja manualna**
-   - Scenariusze:
-     - 401 bez sesji
-     - 400 invalid UUID
-     - 400 invalid body
-     - 404 plant nie należy do usera
-     - 429 po przekroczeniu 20/h (symulacja przez inserty `ai_requests`)
-     - 408 poprzez wymuszenie krótkiego timeoutu / mock
-     - 502 przy błędnym kluczu OpenRouter lub mock 5xx
-   - Sprawdzić, że `ai_requests` ma rekord dla każdego wywołania (success/error/rate-limited).
 

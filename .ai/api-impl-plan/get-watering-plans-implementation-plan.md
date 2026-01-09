@@ -87,6 +87,3 @@ Lista wszystkich wersji planów podlewania dla jednej rośliny użytkownika. Ko�
    - `export const GET`.
    - Pobranie usera, parsowanie parametrów, wywołanie serwisu, budowa odpowiedzi JSON + ustawienie `export const prerender = false`.
    - Obsługa błędów przez `try/catch` i `isHttpError`.
-4. **Dodaj testy jednostkowe/integration** (jeśli istnieje framework) dla parserów kursora oraz serwisu (mock Supabase) – minimalnie testy jednostkowe logiki dekodowania kursora.
-5. **Zaktualizuj dokumentację** (README / `.ai/api-plan.md` jeśli wymagane) o szczegóły kursorów.
-6. **Przeprowadź manualny test**: stworzyć kilka planów w Supabase, odpalić endpoint z różnymi parametrami (`active_only`, stronicowanie) i zweryfikować odpowiedź.

@@ -190,11 +190,3 @@ Ponieważ DTO wymaga `display_name`, a baza przechowuje `species_name` + `duplic
 6. **Zbudować odpowiedź w kopercie**:
    - `200`: `{ data: CalendarDayResponseDto, error: null, meta: {} }`
    - błędy: `{ data: null, error: { code, message, details? }, meta: {} }`
-7. **Manual test plan (lokalnie)**
-   - uruchomić `npm run dev`
-   - wykonać request:
-     - poprawny: `GET /api/calendar/day?date=2026-01-03`
-     - filtr: `status=pending`
-     - sort: `sort=species_name&order=asc`
-     - błędny: `date=2026-13-40` → `400`
-     - bez tokena → `401`

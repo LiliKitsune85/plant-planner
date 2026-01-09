@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FC } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -14,6 +14,7 @@ import type {
   WateringPlanFormValues,
   WateringPlanSourceVm,
   AiSuggestionAvailableVm,
+  AiSuggestionRateLimitedVm,
   AiSuggestionStateVm,
 } from '@/components/plants/watering-plan/types'
 import { useWateringPlanSuggestion } from '@/components/hooks/use-watering-plan-suggestion'
@@ -22,12 +23,19 @@ import {
   buildDefaultFormValues,
   buildManualOnlyState,
   formValuesFromSuggestion,
+  isValidWateringPlanPlantId,
   sanitizeFormToSetCommand,
 } from '@/components/plants/watering-plan/view-model'
-import type { WateringSuggestionForCreationDto } from '@/types'
+import type { AiQuotaDto, WateringSuggestionForCreationDto } from '@/types'
 import { consumeCreatePlantResult } from '@/lib/services/plants/create-plant-result-session'
 import { getCalendarDay } from '@/lib/services/calendar/day-client'
 import { getCalendarMonth } from '@/lib/services/calendar/month-client'
+import { fetchAiQuota } from '@/lib/services/ai/ai-quota-client'
+import { getPlantDetail } from '@/lib/services/plants/plants-client'
+import {
+  getWateringPlanContext,
+  saveWateringPlanContext,
+} from '@/lib/services/plants/watering-plan-context-session'
 
 export type PlantWateringPlanViewProps = {
   plantId: string
@@ -55,15 +63,43 @@ export const PlantWateringPlanView: FC<PlantWateringPlanViewProps> = ({
   )
   const [editorSource, setEditorSource] = useState<WateringPlanSourceVm>({ type: 'manual' })
   const [isRedirecting, setIsRedirecting] = useState(false)
+  const [isHydratingSpecies, setIsHydratingSpecies] = useState(false)
+  const [precheckedRateLimit, setPrecheckedRateLimit] = useState<AiSuggestionRateLimitedVm | null>(null)
+  const [precheckedQuota, setPrecheckedQuota] = useState<AiQuotaDto | null>(null)
+  const [quotaCheckpoint, setQuotaCheckpoint] = useState<'idle' | 'checking' | 'ready'>('idle')
+  const speciesHydrationAttemptRef = useRef<string | null>(null)
+  const speciesHydrationController = useRef<AbortController | null>(null)
+  const quotaControllerRef = useRef<AbortController | null>(null)
 
   const { state: suggestionState, isRunning: isSuggesting, run, reset } = useWateringPlanSuggestion({
     plantId,
     speciesName,
-    enabled: aiEnabled,
+    enabled: aiEnabled && Boolean(speciesName),
     initialSuggestion: creationSuggestion,
   })
   const { isSaving, error: saveError, save, clearError } = useSetWateringPlan({ plantId })
   const isBusy = isSaving || isRedirecting
+  const isQuotaChecking = quotaCheckpoint === 'checking'
+
+  useEffect(() => {
+    return () => {
+      speciesHydrationController.current?.abort()
+      quotaControllerRef.current?.abort()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!plantId) return
+    const cached = getWateringPlanContext(plantId)
+    if (!cached) return
+    if (cached.speciesName) {
+      setSpeciesName((prev) => prev ?? cached.speciesName ?? null)
+    }
+    if (cached.suggestion) {
+      setCreationSuggestion((prev) => prev ?? cached.suggestion)
+    }
+  }, [plantId])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -73,14 +109,164 @@ export const PlantWateringPlanView: FC<PlantWateringPlanViewProps> = ({
     if (payload.speciesName) {
       setSpeciesName((prev) => prev ?? payload.speciesName)
     }
+    if (payload.speciesName || payload.wateringSuggestion.status === 'available') {
+      saveWateringPlanContext(plantId, {
+        speciesName: payload.speciesName ?? null,
+        suggestion:
+          payload.wateringSuggestion.status === 'available' ? payload.wateringSuggestion : undefined,
+      })
+    }
   }, [plantId])
+
+  useEffect(() => {
+    speciesHydrationAttemptRef.current = null
+  }, [plantId])
+
+  useEffect(() => {
+    if (speciesName) {
+      speciesHydrationController.current?.abort()
+      setIsHydratingSpecies(false)
+      return
+    }
+    if (!plantId || !isValidWateringPlanPlantId(plantId)) return
+    if (speciesHydrationAttemptRef.current === plantId) return
+
+    const controller = new AbortController()
+    speciesHydrationController.current = controller
+    speciesHydrationAttemptRef.current = plantId
+    setIsHydratingSpecies(true)
+
+    void (async () => {
+      try {
+        const { data } = await getPlantDetail({ plantId }, { signal: controller.signal })
+        const fetchedSpecies = data.plant.species_name
+        if (fetchedSpecies) {
+          setSpeciesName((prev) => prev ?? fetchedSpecies)
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return
+        console.warn('Failed to hydrate species name for watering plan view', { error, plantId })
+      } finally {
+        if (controller.signal.aborted) return
+        setIsHydratingSpecies(false)
+        if (speciesHydrationController.current === controller) {
+          speciesHydrationController.current = null
+        }
+      }
+    })()
+
+    return () => {
+      controller.abort()
+    }
+  }, [plantId, speciesName])
+
+  useEffect(() => {
+    if (!plantId) return
+    if (!speciesName) return
+    saveWateringPlanContext(plantId, { speciesName })
+  }, [plantId, speciesName])
+
+  useEffect(() => {
+    if (!aiEnabled || currentMode !== 'suggest' || !speciesName) {
+      quotaControllerRef.current?.abort()
+      quotaControllerRef.current = null
+      if (quotaCheckpoint !== 'idle') {
+        setQuotaCheckpoint('idle')
+      }
+      setPrecheckedRateLimit(null)
+      setPrecheckedQuota(null)
+      return
+    }
+
+    if (suggestionState.status !== 'idle' || precheckedRateLimit) {
+      if (quotaCheckpoint !== 'ready') {
+        setQuotaCheckpoint('ready')
+      }
+      return
+    }
+
+    if (quotaCheckpoint !== 'idle') return
+
+    const controller = new AbortController()
+    quotaControllerRef.current = controller
+    setQuotaCheckpoint('checking')
+
+    void (async () => {
+      try {
+        const quota = await fetchAiQuota({ signal: controller.signal })
+        setPrecheckedQuota(quota)
+        if (quota.is_rate_limited) {
+          setPrecheckedRateLimit({
+            status: 'rate_limited',
+            unlockAt: quota.unlock_at,
+            aiRequestId: null,
+          })
+        } else {
+          setPrecheckedRateLimit(null)
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return
+        console.warn('Failed to pre-check AI quota', { error })
+        setPrecheckedRateLimit(null)
+        setPrecheckedQuota(null)
+      } finally {
+        if (controller.signal.aborted) return
+        setQuotaCheckpoint('ready')
+        if (quotaControllerRef.current === controller) {
+          quotaControllerRef.current = null
+        }
+      }
+    })()
+
+    return () => {
+      controller.abort()
+    }
+  }, [
+    aiEnabled,
+    currentMode,
+    precheckedRateLimit,
+    quotaCheckpoint,
+    speciesName,
+    suggestionState.status,
+  ])
 
   useEffect(() => {
     if (!aiEnabled) return
     if (currentMode !== 'suggest') return
+    if (!speciesName) return
     if (suggestionState.status !== 'idle') return
+    if (precheckedRateLimit) return
+    if (quotaCheckpoint !== 'ready') return
     run()
-  }, [aiEnabled, currentMode, suggestionState.status, run])
+  }, [
+    aiEnabled,
+    currentMode,
+    precheckedRateLimit,
+    quotaCheckpoint,
+    run,
+    speciesName,
+    suggestionState.status,
+  ])
+
+  useEffect(() => {
+    if (!plantId) return
+    if (suggestionState.status !== 'available') return
+    const suggestionForCache: WateringSuggestionForCreationDto = {
+      status: 'available',
+      ai_request_id: suggestionState.aiRequestId,
+      interval_days: suggestionState.intervalDays,
+      horizon_days: suggestionState.horizonDays,
+      schedule_basis: suggestionState.scheduleBasis,
+      start_from: suggestionState.startFrom,
+      custom_start_on: suggestionState.customStartOn ?? null,
+      overdue_policy: suggestionState.overduePolicy,
+      explanation: suggestionState.explanation,
+    }
+    saveWateringPlanContext(plantId, {
+      speciesName: speciesName ?? null,
+      suggestion: suggestionForCache,
+    })
+  }, [plantId, speciesName, suggestionState])
 
   const manualSkippedState = useMemo(() => buildManualOnlyState(), [])
   const suggestionForDisplay: AiSuggestionStateVm = aiEnabled ? suggestionState : manualSkippedState
@@ -122,6 +308,14 @@ export const PlantWateringPlanView: FC<PlantWateringPlanViewProps> = ({
     }
   }, [redirectAfterSave])
 
+  const resetQuotaCheckpoint = useCallback(() => {
+    quotaControllerRef.current?.abort()
+    quotaControllerRef.current = null
+    setQuotaCheckpoint('idle')
+    setPrecheckedRateLimit(null)
+    setPrecheckedQuota(null)
+  }, [])
+
   const startManualFlow = useCallback(
     (initial?: WateringPlanFormValues) => {
       setEditorMode('manual')
@@ -129,9 +323,10 @@ export const PlantWateringPlanView: FC<PlantWateringPlanViewProps> = ({
       setEditorSource({ type: 'manual' })
       setCurrentMode('edit')
       setAiEnabled(false)
+      resetQuotaCheckpoint()
       clearError()
     },
-    [clearError],
+    [clearError, resetQuotaCheckpoint],
   )
 
   const handleManual = useCallback(() => {
@@ -194,14 +389,55 @@ export const PlantWateringPlanView: FC<PlantWateringPlanViewProps> = ({
     }
   }, [handlePlanSaved, isBusy, save, suggestionState])
 
+  const handleQuotaRetry = useCallback(() => {
+    if (isBusy) return
+    resetQuotaCheckpoint()
+  }, [isBusy, resetQuotaCheckpoint])
+
   const handleRetrySuggest = useCallback(() => {
+    if (isBusy) return
     reset()
-    run()
-  }, [reset, run])
+    resetQuotaCheckpoint()
+  }, [isBusy, reset, resetQuotaCheckpoint])
 
   const renderSuggestion = () => {
     if (currentMode === 'edit') {
       return null
+    }
+
+    if (isHydratingSpecies && !speciesName) {
+      return (
+        <FullScreenState
+          title="Przygotowujemy dane rośliny…"
+          description="Pobieramy gatunek rośliny, aby móc poprosić AI o plan."
+        />
+      )
+    }
+
+    if (isQuotaChecking && !precheckedRateLimit && suggestionState.status === 'idle' && speciesName) {
+      return (
+        <FullScreenState
+          title="Sprawdzamy limit AI…"
+          description="Upewniamy się, że możesz wykorzystać sugestię AI, zanim wyślemy żądanie."
+          action={
+            <Button variant="ghost" onClick={handleManual} disabled={isBusy}>
+              Ustaw ręcznie
+            </Button>
+          }
+        />
+      )
+    }
+
+    if (precheckedRateLimit) {
+      return (
+        <AiBlockedState
+          status={precheckedRateLimit}
+          variant="precheck"
+          onManual={handleManual}
+          onRetry={handleQuotaRetry}
+          quota={precheckedQuota ?? undefined}
+        />
+      )
     }
 
     if (suggestionForDisplay.status === 'loading' || suggestionForDisplay.status === 'idle') {
@@ -231,7 +467,14 @@ export const PlantWateringPlanView: FC<PlantWateringPlanViewProps> = ({
     }
 
     if (suggestionForDisplay.status === 'rate_limited') {
-      return <AiBlockedState status={suggestionForDisplay} onManual={handleManual} />
+      return (
+        <AiBlockedState
+          status={suggestionForDisplay}
+          onManual={handleManual}
+          onRetry={handleRetrySuggest}
+          quota={precheckedQuota ?? undefined}
+        />
+      )
     }
 
     if (
@@ -244,7 +487,7 @@ export const PlantWateringPlanView: FC<PlantWateringPlanViewProps> = ({
       return (
         <AiErrorState
           error={suggestionForDisplay}
-          isRetrying={isSuggesting}
+          isRetrying={isSuggesting || isQuotaChecking}
           onRetry={handleRetrySuggest}
           onManual={handleManual}
         />

@@ -378,17 +378,3 @@ Uwaga: jeśli zależy na minimalizmie, `useUpdatePlant` można pominąć i trzym
    - dodać link „Edytuj” w przyszłym widoku szczegółów rośliny (`/plants/:plantId`)
    - dodać „Powrót” z edycji do szczegółów
 
-### Potencjalne wyzwania i sugerowane rozwiązania
-- **Różnice między walidacją UI a walidacją API (szczególnie `nickname`, `purchase_date`, `photo_path`)**
-  - rozwiązanie: konsekwentnie mapować puste wartości na `null` (nie na `''`) dla pól, które nie akceptują pustego stringa
-  - rozwiązanie: dodać czytelne helpery i walidację klienta 1:1 z backendem
-- **Użytkownicy wklejają URL zdjęcia zamiast ścieżki Storage**
-  - rozwiązanie: helper pod polem `photo_path` + walidacja „to nie może być URL”
-  - rozwiązanie: w przyszłości dodać osobny flow uploadu i wybór pliku zamiast ręcznego wpisywania
-- **Brak globalnego systemu toastów w projekcie**
-  - rozwiązanie: lokalny toast/badge w `PlantEditView` (spełnia UX w tym widoku bez dodatkowej infrastruktury)
-  - rozwiązanie docelowe: wdrożyć globalne toasty (np. Radix Toast) i montować je w `Layout.astro`
-- **Brak endpointu GET `/api/plants/{plantId}` (jeśli nie jest jeszcze zaimplementowany)**
-  - rozwiązanie: dopisać GET w `src/pages/api/plants/[plantId]/index.ts` wykorzystując istniejący serwis `getPlantDetail`
-  - rozwiązanie przejściowe: jeśli użytkownik trafia tu z innego widoku, można przekazywać część danych przez URL state, ale docelowo i tak potrzebny jest GET
-

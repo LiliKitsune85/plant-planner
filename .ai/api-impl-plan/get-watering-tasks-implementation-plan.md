@@ -210,6 +210,4 @@ Przykład:
 8. **Spójność formatów i ergonomia klienta**:
    - utrzymać `meta.next_cursor` (jak `/api/plants`)
    - rozważyć `Cache-Control: no-store` (dane prywatne), jeśli w projekcie uznane za standard
-9. **Weryfikacja manualna**:
-   - sprawdzić przypadki: brak auth, złe daty, `from>to`, `source=adhoc&status=pending`, cursor mismatch, oraz filtrowanie i sortowanie.
 

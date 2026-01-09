@@ -98,6 +98,3 @@ Endpoint aktualizuje opcjonalne pola rośliny należącej do zalogowanego użytk
 3. **Endpoint** – utwórz/uzupełnij `src/pages/api/plants/[plantId].ts` z `export const PATCH: APIRoute`:
    - pobierz autoryzację, waliduj wejście, zbuduj `UpdatePlantCommand`, wywołaj serwis, mapuj wynik na DTO.
 4. **Obsługa błędów** – zapewnij, że `HttpError` jest używany konsekwentnie, a Zod błędy są mapowane do 422.
-5. **Testy/QA** – jednostkowe dla schematu (np. daty, brak pól), integracyjne (patch on existing plant), przypadki błędów (401, 404, 409, 422).
-6. **Dokumentacja** – zaktualizuj README/AI plan (jeśli konieczne) i ustaw monitorowanie logów dla 500.
-7. **Weryfikacja** – ręcznie przetestuj w Devtools lub `curl`, zapewniając, że `species_name` pozostaje niezmienne i `updated_at` się zmienia.

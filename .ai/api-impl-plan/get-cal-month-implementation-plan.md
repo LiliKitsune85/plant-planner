@@ -99,11 +99,3 @@
    - Obsługa błędów: `HttpError` → `status`, `code`; inaczej `500`.
 4. **Utilities**
    - Dodać helper do obliczenia `rangeStart/rangeEnd` (np. `src/lib/utils/date.ts` jeśli brak). Użyć `Temporal`/`Date` + `utc`. Zapewnić testy jednostkowe (np. `monthToDateRange`).
-5. **Testing**
-   - Napisać testy jednostkowe dla walidacji (zod) oraz funkcji zakresu dat.
-   - Test integracyjny serwisu: mock Supabase client (lub test e2e z lokalną bazą) weryfikujący filtr statusu i agregację.
-6. **Docs**
-   - Zaktualizować `.ai/api-plan.md` lub README jeśli konieczne (np. opis parametru `status` – już istnieje).
-7. **Verification**
-   - Uruchomić `npm test` i `npm run lint`.
-   - Manualny smoke test via `curl` / Thunder Client z różnymi parametrami.

@@ -70,5 +70,3 @@
 4. **Walidacja i autoryzacja**: w route zweryfikuj token (`supabase.auth.getUser()`), przemapuj błędy na `HttpError`.
 5. **Obsługa błędów i envelope**: użyj istniejącego helpera (jeśli jest) lub dodaj util budujący odpowiedź `{ data, error, meta }`, aby zachować jednolitość API.
 6. **Logowanie błędów**: w bloku `catch` loguj szczegóły (userId, plantId, kod błędu); jeżeli istnieje tabela błędów, wstaw tam rekord – w innym wypadku użyj `console.error`.
-7. **Testy**: napisz testy jednostkowe serwisu (mock Supabase) oraz test e2e/integration (np. z wykorzystaniem Supabase emulatora) pokrywające scenariusze 200/400/401/404/500.
-8. **Dokumentacja i review**: zaktualizuj README/AI plan (jeśli potrzeba) i poproś o code review; zweryfikuj w API client (np. Thunder Client) poprawność kodów statusu.

@@ -2,8 +2,10 @@ import type { SupabaseClient } from '../../../db/supabase.client'
 import type {
   AiQuotaDto,
   SuggestWateringPlanCommand,
+  WateringPlanConfigFields,
   WateringPlanSuggestionDto,
 } from '../../../types'
+import { z } from 'zod'
 import { HttpError, isHttpError } from '../../http/errors'
 import { getAiQuota } from '../ai/ai-quota'
 import {
@@ -12,7 +14,8 @@ import {
   markAiRequestRateLimited,
   markAiRequestSuccess,
 } from '../ai/ai-requests'
-import { requestWateringPlanSuggestion } from '../ai/openrouter-client'
+import type { OpenRouterChatMessageInput, ResponseFormatJsonSchema } from '../openrouter.service'
+import { OpenRouterService } from '../openrouter.service'
 
 type ServiceParams = {
   userId: string
@@ -59,10 +62,155 @@ const ensurePlantOwnership = async (
   }
 }
 
+const EXPLANATION_MAX_LENGTH = 800
+const MAX_CUSTOM_DATE_LENGTH = 10
+
+const isValidIsoDate = (value: string): boolean => {
+  if (value.length !== MAX_CUSTOM_DATE_LENGTH) return false
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+  const parsed = new Date(`${value}T00:00:00Z`)
+  if (Number.isNaN(parsed.getTime())) return false
+  return parsed.toISOString().slice(0, 10) === value
+}
+
+const isoDateSchema = z
+  .string()
+  .trim()
+  .refine(isValidIsoDate, { message: 'Invalid custom_start_on date (expected YYYY-MM-DD)' })
+
+const suggestionSchema = z
+  .object({
+    interval_days: z.number().int().min(1).max(365),
+    horizon_days: z.number().int().min(1).max(365),
+    schedule_basis: z.enum(['due_on', 'completed_on']),
+    start_from: z.enum(['today', 'purchase_date', 'custom_date']),
+    custom_start_on: z.union([isoDateSchema, z.null()]).optional(),
+    overdue_policy: z.enum(['carry_forward', 'reschedule']),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.start_from === 'custom_date' && !value.custom_start_on) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['custom_start_on'],
+        message: 'custom_start_on is required when start_from is custom_date',
+      })
+    }
+
+    if (value.start_from !== 'custom_date' && value.custom_start_on) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['custom_start_on'],
+        message: 'custom_start_on must be null unless start_from is custom_date',
+      })
+    }
+  })
+
+const responseSchema = z
+  .object({
+    suggestion: suggestionSchema,
+    explanation: z
+      .string()
+      .trim()
+      .min(1, 'explanation is required')
+      .max(EXPLANATION_MAX_LENGTH, `explanation must be <= ${EXPLANATION_MAX_LENGTH} characters`),
+  })
+  .strict()
+
+type WateringPlanModelResponse = z.infer<typeof responseSchema>
+
+const toWateringPlanConfig = (value: z.infer<typeof suggestionSchema>): WateringPlanConfigFields => ({
+  interval_days: value.interval_days,
+  horizon_days: value.horizon_days,
+  schedule_basis: value.schedule_basis,
+  start_from: value.start_from,
+  custom_start_on: value.custom_start_on ?? null,
+  overdue_policy: value.overdue_policy,
+})
+
 const resolveOpenRouterConfig = () => ({
   apiKey: import.meta.env.OPENROUTER_API_KEY ?? '',
-  model: import.meta.env.OPENROUTER_MODEL ?? undefined,
+  defaultModel: import.meta.env.OPENROUTER_MODEL ?? undefined,
+  appUrl: import.meta.env.APP_BASE_URL ?? 'https://plant-planner.app',
+  appTitle: 'Plant Planner',
 })
+
+type ServiceResources = {
+  service: OpenRouterService
+  responseFormat: ResponseFormatJsonSchema
+}
+
+const WATERING_PLAN_RESPONSE_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['suggestion', 'explanation'],
+  properties: {
+    suggestion: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'interval_days',
+        'horizon_days',
+        'schedule_basis',
+        'start_from',
+        'custom_start_on',
+        'overdue_policy',
+      ],
+      properties: {
+        interval_days: { type: 'integer', minimum: 1, maximum: 365 },
+        horizon_days: { type: 'integer', minimum: 1, maximum: 365 },
+        schedule_basis: { type: 'string', enum: ['due_on', 'completed_on'] },
+        start_from: { type: 'string', enum: ['today', 'purchase_date', 'custom_date'] },
+        custom_start_on: {
+          anyOf: [
+            { type: 'string', format: 'date' },
+            { type: 'null' },
+          ],
+        },
+        overdue_policy: { type: 'string', enum: ['carry_forward', 'reschedule'] },
+      },
+    },
+    explanation: { type: 'string', minLength: 1, maxLength: EXPLANATION_MAX_LENGTH },
+  },
+} as const
+
+const resolveServiceResources = (() => {
+  let cached: ServiceResources | null = null
+  return (): ServiceResources => {
+    if (cached) return cached
+
+    const service = new OpenRouterService(resolveOpenRouterConfig())
+    const responseFormat = service.buildResponseFormatJsonSchema(
+      'watering_plan_suggestion_v1',
+      WATERING_PLAN_RESPONSE_SCHEMA,
+    )
+
+    cached = { service, responseFormat }
+    return cached
+  }
+})()
+
+const buildMessages = (speciesName: string): OpenRouterChatMessageInput[] => [
+  {
+    role: 'system',
+    content:
+      'You are a horticulture assistant that suggests concise watering schedules. ' +
+      'Always respond with JSON that matches the provided schema. ' +
+      'Base your recommendation only on the user supplied species name.',
+  },
+  {
+    role: 'user',
+    content: `Provide a watering plan suggestion for the following plant species:\n\n${speciesName}`,
+  },
+]
+
+const WATERING_PLAN_MODEL_PARAMS = {
+  temperature: 0.2,
+  top_p: 0.9,
+  max_tokens: 500,
+  presence_penalty: 0,
+  frequency_penalty: 0.2,
+} as const
 
 const buildRateLimitedSuggestion = (
   aiRequestId: string,
@@ -94,14 +242,17 @@ export const suggestWateringPlan = async (
     }
   }
 
-  const { apiKey, model } = resolveOpenRouterConfig()
+  const { service, responseFormat } = resolveServiceResources()
 
   try {
-    const aiResult = await requestWateringPlanSuggestion({
-      apiKey,
-      model,
-      speciesName: command.context.species_name,
-    })
+    const aiResult = await service.chatJson<WateringPlanModelResponse>(
+      {
+        messages: buildMessages(command.context.species_name),
+        responseFormat,
+        modelParams: WATERING_PLAN_MODEL_PARAMS,
+      },
+      responseSchema,
+    )
 
     await markAiRequestSuccess(supabase, {
       id: aiRequestId,
@@ -114,12 +265,14 @@ export const suggestWateringPlan = async (
       },
     })
 
+    const parsedSuggestion = toWateringPlanConfig(aiResult.data.suggestion)
+
     return {
       status: 'success',
       suggestion: {
         ai_request_id: aiRequestId,
-        suggestion: aiResult.suggestion,
-        explanation: aiResult.explanation,
+        suggestion: parsedSuggestion,
+        explanation: aiResult.data.explanation,
       },
       quota,
     }

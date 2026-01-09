@@ -70,8 +70,3 @@
 5. **Obsłuż brak rekordu** w serwisie (zwróć `null`) i zamień na `404` w handlerze.
 6. **Dodaj logging** dla wyjątków (np. `logger.error('getPlantDetail failed', error, { plantId, userId })`).
 7. **Zbuduj handler API** w `src/pages/api/plants/[plantId].ts` lub `.astro`: importuje walidację, serwis, zwraca ustandaryzowaną odpowiedź, ustawia `export const prerender = false`.
-8. **Testuj manualnie i jednostkowo**: 
-   - przypadek sukcesu (z planem i bez planu),
-   - brak autoryzacji,
-   - nieistniejący plantId,
-   - plantId innego użytkownika.

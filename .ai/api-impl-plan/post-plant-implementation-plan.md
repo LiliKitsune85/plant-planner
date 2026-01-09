@@ -98,6 +98,3 @@
 5. **Zaimplementuj handler API** w `src/pages/api/plants/index.ts`:
    - `export const prerender = false`.
    - `export async function POST(context: APIContext)` – walidacja, autoryzacja, wywołanie serwisu, mapowanie odpowiedzi, ustawienie HTTP 201 + `Location`.
-6. **Dodaj testy jednostkowe/integracyjne** (jeżeli projekt ich używa) dla serwisu (mock Supabase) oraz test e2e route (np. z Vitest + `astro/test`), pokrywające sukces, walidację, rate-limit i konflikt duplikatu.
-7. **Aktualizuj dokumentację** (`.ai/api-plan.md` lub README) jeśli pojawią się dodatkowe pola/nagłówki.
-8. **Uruchom lint/test** (`npm run lint`, `npm run test`) i zweryfikuj brak regresji przed udostępnieniem endpointu.

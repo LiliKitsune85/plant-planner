@@ -83,6 +83,3 @@
    - waliduje wejście,
    - wywołuje serwis i mapuje wynik na DTO,
    - przechwytuje `HttpError` i inne wyjątki.
-5. **Testy jednostkowe/integracyjne** – dodaj testy serwisu (np. mock Supabase) i e2e kontrakty (schemat 422, 404, 200).
-6. **Logowanie i monitoring** – upewnij się, że błędy są raportowane (np. Sentry/logger + tabela audytowa).
-7. **Dokumentacja/PRD** – zaktualizuj `.ai/api-plan.md` lub wiki, jeśli endpoint otrzymał dodatkowe reguły biznesowe, oraz opisz wpływ na klienta.

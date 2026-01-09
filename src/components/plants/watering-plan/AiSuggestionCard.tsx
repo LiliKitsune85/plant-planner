@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import type { FC } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -19,6 +20,8 @@ type AiSuggestionCardProps = {
   onRejectToManual: () => void
 }
 
+const EXPLANATION_COLLAPSE_THRESHOLD = 420
+
 export const AiSuggestionCard: FC<AiSuggestionCardProps> = ({
   suggestion,
   isSaving,
@@ -26,6 +29,24 @@ export const AiSuggestionCard: FC<AiSuggestionCardProps> = ({
   onEdit,
   onRejectToManual,
 }) => {
+  const [isExplanationExpanded, setIsExplanationExpanded] = useState(false)
+  const { displayExplanation, isCollapsible } = useMemo(() => {
+    const text = suggestion.explanation
+    if (!text) {
+      return { displayExplanation: '', isCollapsible: false }
+    }
+    if (text.length <= EXPLANATION_COLLAPSE_THRESHOLD) {
+      return { displayExplanation: text, isCollapsible: false }
+    }
+    if (isExplanationExpanded) {
+      return { displayExplanation: text, isCollapsible: true }
+    }
+    return {
+      displayExplanation: `${text.slice(0, EXPLANATION_COLLAPSE_THRESHOLD).trimEnd()}…`,
+      isCollapsible: true,
+    }
+  }, [isExplanationExpanded, suggestion.explanation])
+
   return (
     <Card>
       <CardHeader>
@@ -41,9 +62,18 @@ export const AiSuggestionCard: FC<AiSuggestionCardProps> = ({
           <p className="text-2xl font-semibold">{`Podlewaj co ${suggestion.intervalDays} dni`}</p>
         </div>
         {suggestion.explanation ? (
-          <div className="space-y-1 rounded-2xl border border-muted-foreground/20 bg-muted/30 p-4 text-sm text-muted-foreground">
+          <div className="space-y-3 rounded-2xl border border-muted-foreground/20 bg-muted/30 p-4 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">Uzasadnienie AI</p>
-            <p>{suggestion.explanation}</p>
+            <p aria-live="polite">{displayExplanation}</p>
+            {isCollapsible ? (
+              <button
+                type="button"
+                className="text-xs font-semibold uppercase tracking-wide text-primary"
+                onClick={() => setIsExplanationExpanded((prev) => !prev)}
+              >
+                {isExplanationExpanded ? 'Pokaż mniej' : 'Pokaż więcej'}
+              </button>
+            ) : null}
           </div>
         ) : null}
         <dl className="grid gap-4 rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm sm:grid-cols-2">

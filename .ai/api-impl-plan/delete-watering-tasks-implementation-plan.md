@@ -157,16 +157,4 @@
      - `meta: {}` (jak `plants/*`) **albo**
      - `meta: { request_id }` (jak `calendar/*`)
    - rekomendacja: **dodać `request_id`** dla lepszego debugowania produkcji (bez zmiany kontraktu `data`).
-5. **(Opcjonalnie) Regeneracja przyszłych zadań po “delete”**:
-   - jeśli zespół uzna to za wymagane w MVP, dodać w service:
-     - lookup aktywnego planu / planu z `plan_id`,
-     - wywołanie RPC `regenerate_watering_tasks` analogicznie do `setPlantWateringPlan`.
-6. **Testy i weryfikacja ręczna (checklista)**:
-   - `401`: brak tokena/cookies.
-   - `400`: brak `confirm=true`.
-   - `404`: taskId nie istnieje / jest cudzy.
-   - `200` + hard delete: `adhoc`.
-   - `409`: `scheduled` + `pending`.
-   - `200` + undo: `scheduled` + `completed` (sprawdź, że `completed_at/completed_on` są NULL i `status=pending`).
-   - (Jeśli włączone) sprawdź, że kalendarz/regeneracja odzwierciedla zmianę.
 

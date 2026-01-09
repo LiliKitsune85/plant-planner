@@ -165,15 +165,3 @@ Endpoint:
    - Zweryfikować, że `ai_requests` ma RLS i politykę SELECT tylko dla właściciela.
    - Sprawdzić, że endpoint nie używa klucza serwisowego i nie omija RLS (powinien używać `locals.supabase`).
 
-6. **Testy (zalecane)**
-   - Test jednostkowy serwisu `getAiQuota`:
-     - wyliczanie okna UTC (boundary conditions: 12:59:59 → reset 13:00:00)
-     - wyliczanie `remaining/is_rate_limited/unlock_at`
-   - Test integracyjny endpointu:
-     - `401` bez sesji
-     - `200` z sesją (stub/mocking Supabase count)
-
-7. **Dokumentacja i stabilność kontraktu**
-   - Potwierdzić zgodność odpowiedzi z `@api-plan.md` (pola, nazwy, kody).
-   - Dodać krótką notkę w dokumentacji dev (jeśli istnieje) jak klient powinien interpretować `unlock_at`.
-

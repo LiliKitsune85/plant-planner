@@ -98,7 +98,3 @@ Lista wszystkich roślin zalogowanego użytkownika wraz z metadanymi i informacj
    - Pobierz user session z `locals`.
    - Obsłuż walidację, wywołaj serwis, zbuduj odpowiedź.
    - Dodaj strukturalny error handling (try/catch + mapowanie kodów).
-6. **Testy/manual QA**:
-   - Jednostkowe dla `decodeCursor` i `listPlants`.
-   - Ręczne curl/httpie: bez auth (401), z auth i filtrami, weryfikacja `next_cursor`.
-7. **Observability**: upewnij się, że logi błędów trafiają do konsoli/monitoringu; dodaj structured logging (np. `logger.error({ err, userId }, 'listPlants failed')`).

@@ -202,16 +202,4 @@ Aktualizacja zadania + (opcjonalna) regeneracja to logicznie jedna operacja. Dla
      - `UpdateWateringTaskResultDto`
      - `ScheduleEffectDto`
    - doprecyzuj kody błędów (`code`) w jednym miejscu (np. stałe), jeśli zaczynają się mnożyć.
-6. **Testy (zalecane)**:
-   - unit testy parsera (Zod) dla:
-     - invalid JSON (route)
-     - brak pól
-     - `status=completed` bez `completed_on`
-     - `status=pending` z `completed_on`
-     - zbyt długie `note`
-   - testy integracyjne serwisu z lokalnym Supabase (jeśli jest) dla:
-     - `scheduled` complete/undo
-     - `adhoc` edit `completed_on` (wymuszenie `due_on=completed_on`)
-     - konflikt unikalności `(plant_id, due_on)`
-     - warunkowa regeneracja (przy `schedule_basis='completed_on'`)
 
