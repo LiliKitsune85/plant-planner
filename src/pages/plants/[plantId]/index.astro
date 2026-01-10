@@ -1,21 +1,19 @@
 ---
-import Layout from '../../../../layouts/Layout.astro'
-import { PlantDetailView } from '../../../../components/plants/detail/PlantDetailView'
+import Layout from "../../../layouts/Layout.astro";
+import { PlantDetailView } from "../../../components/plants/detail/PlantDetailView";
 
-export const prerender = false
+export const prerender = false;
 
-const { plantId } = Astro.params
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+const { plantId } = Astro.params;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const hasPlantId = typeof plantId === 'string' && plantId.length > 0
-const isValidPlantId = hasPlantId && UUID_REGEX.test(plantId)
-const safePlantId = hasPlantId ? plantId : ''
+const hasPlantId = typeof plantId === "string" && plantId.length > 0;
+const isValidPlantId = hasPlantId && UUID_REGEX.test(plantId);
+const safePlantId = hasPlantId ? plantId : "";
 
-const pageTitle = isValidPlantId ? 'Szczegóły rośliny' : 'Roślina — niepoprawny identyfikator'
+const pageTitle = isValidPlantId ? "Szczegóły rośliny" : "Roślina — niepoprawny identyfikator";
 ---
 
 <Layout title={pageTitle}>
   <PlantDetailView plantId={safePlantId} client:load />
 </Layout>
-
