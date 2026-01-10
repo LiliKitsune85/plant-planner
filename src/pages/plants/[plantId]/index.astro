@@ -1,6 +1,18 @@
 ---
-import Layout from "../../../layouts/Layout.astro";
-import { PlantDetailView } from "../../../components/plants/detail/PlantDetailView";
+import Layout from "@/layouts/Layout.astro";
+import { PlantDetailView } from "@/components/plants/detail/PlantDetailView";
+import type { PlantDetailInitialState } from "@/components/hooks/use-plant-detail";
+import {
+  mapPlantDetailDtoToVm,
+  buildInvalidPlantIdErrorVm,
+  buildMissingPlantIdErrorVm,
+  buildPlantNotFoundErrorVm,
+  buildUnknownPlantDetailErrorVm,
+} from "@/lib/services/plants/detail-view-model";
+import {
+  getPlantDetail,
+  mapPlantDetailRecordToDto,
+} from "@/lib/services/plants/get-plant-detail";
 
 export const prerender = false;
 
@@ -8,12 +20,59 @@ const { plantId } = Astro.params;
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const hasPlantId = typeof plantId === "string" && plantId.length > 0;
-const isValidPlantId = hasPlantId && UUID_REGEX.test(plantId);
-const safePlantId = hasPlantId ? plantId : "";
+const isValidPlantId = hasPlantId && plantId ? UUID_REGEX.test(plantId) : false;
+const safePlantId = hasPlantId && plantId ? plantId : "";
+const detailPath = safePlantId ? `/plants/${safePlantId}` : "/plants";
+
+const {
+  data: { user },
+  error: authError,
+} = await Astro.locals.supabase.auth.getUser();
+
+if (authError || !user) {
+  const loginUrl = new URL("/auth/login", Astro.url);
+  loginUrl.searchParams.set("returnTo", detailPath);
+  return Astro.redirect(loginUrl);
+}
+
+let initialData: PlantDetailInitialState = {
+  status: "idle",
+};
+
+if (!hasPlantId) {
+  initialData = { error: buildMissingPlantIdErrorVm(), status: "error" };
+} else if (!isValidPlantId) {
+  initialData = { error: buildInvalidPlantIdErrorVm(), status: "error" };
+} else {
+  try {
+    const record = await getPlantDetail(Astro.locals.supabase, {
+      plantId: safePlantId,
+      userId: user.id,
+    });
+
+    if (!record) {
+      initialData = { error: buildPlantNotFoundErrorVm(), status: "error" };
+    } else {
+      const dto = mapPlantDetailRecordToDto(record);
+      initialData = {
+        plant: dto,
+        viewModel: mapPlantDetailDtoToVm(dto),
+        status: "success",
+      };
+    }
+  } catch (error) {
+    console.error("Failed to load plant detail page", {
+      plantId: safePlantId,
+      userId: user.id,
+      error,
+    });
+    initialData = { error: buildUnknownPlantDetailErrorVm(), status: "error" };
+  }
+}
 
 const pageTitle = isValidPlantId ? "Szczegóły rośliny" : "Roślina — niepoprawny identyfikator";
 ---
 
 <Layout title={pageTitle}>
-  <PlantDetailView plantId={safePlantId} client:load />
+  <PlantDetailView plantId={safePlantId} initialData={initialData} client:load />
 </Layout>

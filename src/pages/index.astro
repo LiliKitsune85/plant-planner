@@ -1,8 +1,18 @@
 ---
-import Welcome from "../components/Welcome.astro";
-import Layout from "../layouts/Layout.astro";
----
+export const prerender = false;
 
-<Layout>
-  <Welcome />
-</Layout>
+const defaultDestination = "/calendar";
+
+const {
+  data: { user },
+} = await Astro.locals.supabase.auth.getUser();
+
+if (user) {
+  return Astro.redirect(defaultDestination);
+}
+
+const loginUrl = new URL("/auth/login", Astro.url);
+loginUrl.searchParams.set("returnTo", defaultDestination);
+
+return Astro.redirect(loginUrl);
+---

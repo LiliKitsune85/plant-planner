@@ -9,9 +9,8 @@ import { monthToDateRange } from '../../utils/date'
 
 type PersistedTaskStatus = Exclude<CalendarTaskStatusFilter, 'all'>
 
-type CalendarMonthAggregateRow = {
-  due_on: string
-  count: number | null
+type CalendarMonthTaskRow = {
+  due_on: string | null
 }
 
 const buildStatusFilter = (
@@ -34,12 +33,11 @@ export const getCalendarMonthSummary = async (
 
   const { data, error } = await supabase
     .from('watering_tasks')
-    .select<CalendarMonthAggregateRow>('due_on, count:count()')
+    .select<CalendarMonthTaskRow>('due_on')
     .eq('user_id', userId)
     .gte('due_on', rangeStart)
     .lt('due_on', rangeEnd)
     .in('status', statusFilter)
-    .group('due_on')
     .order('due_on', { ascending: true })
 
   if (error || !data) {
@@ -58,7 +56,9 @@ export const getCalendarMonthSummary = async (
     )
   }
 
-  const days = data.map((row) => {
+  const aggregated = new Map<string, number>()
+
+  data.forEach((row) => {
     if (!row.due_on) {
       throw new HttpError(
         500,
@@ -67,11 +67,13 @@ export const getCalendarMonthSummary = async (
       )
     }
 
-    return {
-      date: row.due_on,
-      count: row.count ?? 0,
-    }
+    aggregated.set(row.due_on, (aggregated.get(row.due_on) ?? 0) + 1)
   })
+
+  const days = Array.from(aggregated.entries()).map(([date, count]) => ({
+    date,
+    count,
+  }))
 
   return {
     month,

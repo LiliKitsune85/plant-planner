@@ -1,16 +1,16 @@
 ---
-import Layout from '../../../../layouts/Layout.astro'
-import { PlantEditView } from '../../../../components/plants/edit/PlantEditView'
+import Layout from "@/layouts/Layout.astro";
+import { PlantEditView } from "@/components/plants/edit/PlantEditView";
 
-export const prerender = false
+export const prerender = false;
 
-const { plantId } = Astro.params
+const { plantId } = Astro.params;
 
 if (!plantId) {
-  throw new Error('Parametr plantId jest wymagany dla widoku edycji rośliny.')
+  throw new Error("Parametr plantId jest wymagany dla widoku edycji rośliny.");
 }
 
-const pageTitle = 'Edycja rośliny'
+const pageTitle = "Edycja rośliny";
 ---
 
 <Layout title={pageTitle}>

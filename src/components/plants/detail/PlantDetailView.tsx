@@ -3,6 +3,7 @@ import type { FC } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { usePlantDetail } from '@/components/hooks/use-plant-detail'
+import type { PlantDetailInitialState } from '@/components/hooks/use-plant-detail'
 import { usePlantDetailMutations } from '@/components/hooks/use-plant-detail-mutations'
 import { PlantDetailErrorState } from '@/components/plants/detail/PlantDetailErrorState'
 import { PlantDetailHeader } from '@/components/plants/detail/PlantDetailHeader'
@@ -19,10 +20,14 @@ import {
 
 type PlantDetailViewProps = {
   plantId: string
+  initialData?: PlantDetailInitialState
 }
 
-export const PlantDetailView: FC<PlantDetailViewProps> = ({ plantId }) => {
-  const { status, plant, viewModel, error, reload } = usePlantDetail({ plantId })
+export const PlantDetailView: FC<PlantDetailViewProps> = ({ plantId, initialData }) => {
+  const { status, plant, viewModel, error, reload } = usePlantDetail({
+    plantId,
+    initial: initialData,
+  })
   const [waterSuccessMessage, setWaterSuccessMessage] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [waterDialogOpen, setWaterDialogOpen] = useState(false)
@@ -47,9 +52,10 @@ export const PlantDetailView: FC<PlantDetailViewProps> = ({ plantId }) => {
   const calendarHref = actionsVm?.calendarHref ?? fallbackCalendarHref
   const calendarLabel = actionsVm?.calendarLabel
 
+  const detailPath = plantId ? `/plants/${plantId}` : '/plants'
   const loginHref = useMemo(
-    () => `/auth/login?returnTo=${encodeURIComponent(`/plants/${plantId}`)}`,
-    [plantId],
+    () => `/auth/login?returnTo=${encodeURIComponent(detailPath)}`,
+    [detailPath],
   )
 
   useEffect(() => {

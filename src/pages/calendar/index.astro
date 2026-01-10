@@ -1,8 +1,9 @@
 ---
-import { getTodayCalendarMonth } from '../../lib/services/calendar/month-view-model'
+import { formatDateInTimezone } from '@/lib/utils/timezone'
 
 export const prerender = false
 
-const targetMonth = getTodayCalendarMonth()
+const timezone = Astro.locals.profileTimezone ?? 'UTC'
+const targetMonth = formatDateInTimezone(new Date(), timezone).slice(0, 7)
 return Astro.redirect(`/calendar/${targetMonth}`)
 ---

@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import type { PlantDetailErrorVm, PlantDetailVm } from '@/components/plants/detail/types'
+import type {
+  PlantDetailErrorVm,
+  PlantDetailVm,
+  PlantDetailStatus,
+} from '@/components/plants/detail/types'
 import {
   buildInvalidPlantIdErrorVm,
   buildMissingPlantIdErrorVm,
@@ -12,20 +16,40 @@ import {
 import { getPlantDetail, PlantsApiError } from '@/lib/services/plants/plants-client'
 import type { PlantDetailDto } from '@/types'
 
-type UsePlantDetailParams = {
-  plantId: string
+export type PlantDetailInitialState = {
+  plant?: PlantDetailDto
+  viewModel?: PlantDetailVm
+  error?: PlantDetailErrorVm
+  status?: PlantDetailStatus
 }
 
-type PlantDetailRequestStatus = 'idle' | 'loading' | 'success' | 'error'
+type UsePlantDetailParams = {
+  plantId: string
+  initial?: PlantDetailInitialState
+}
 
 type UsePlantDetailResult = {
-  status: PlantDetailRequestStatus
+  status: PlantDetailStatus
   plant?: PlantDetailDto
   viewModel?: PlantDetailVm
   error?: PlantDetailErrorVm
   requestId?: string
   reload: () => void
   mutate: (next: PlantDetailDto) => void
+}
+
+const normalizeInitialState = (
+  input: PlantDetailInitialState | undefined,
+  plantId: string,
+): PlantDetailInitialState | undefined => {
+  if (!input) return undefined
+  const hasPlant = Boolean(input.plant)
+  const hasError = Boolean(input.error)
+  if (!hasPlant && !hasError) return undefined
+  if (input.plant && plantId && input.plant.plant.id !== plantId) {
+    return undefined
+  }
+  return input
 }
 
 const plantDetailDtoCache = new Map<string, PlantDetailDto>()
@@ -38,17 +62,42 @@ export const invalidatePlantDetailCacheById = (plantId: string): void => {
   plantDetailErrorCache.delete(plantId)
 }
 
-export const usePlantDetail = ({ plantId }: UsePlantDetailParams): UsePlantDetailResult => {
-  const [status, setStatus] = useState<PlantDetailRequestStatus>('idle')
-  const [plant, setPlant] = useState<PlantDetailDto | undefined>(() =>
-    plantId ? plantDetailDtoCache.get(plantId) : undefined,
-  )
-  const [viewModel, setViewModel] = useState<PlantDetailVm | undefined>(() =>
-    plantId ? plantDetailVmCache.get(plantId) : undefined,
-  )
-  const [error, setError] = useState<PlantDetailErrorVm | undefined>(() =>
-    plantId ? plantDetailErrorCache.get(plantId) : undefined,
-  )
+export const usePlantDetail = ({
+  plantId,
+  initial,
+}: UsePlantDetailParams): UsePlantDetailResult => {
+  const normalizedInitial = normalizeInitialState(initial, plantId)
+  const initialRef = useRef<PlantDetailInitialState | undefined>(normalizedInitial)
+
+  const getInitialStatus = (): PlantDetailStatus => {
+    if (initialRef.current?.status) return initialRef.current.status
+    if (initialRef.current?.plant) return 'success'
+    if (initialRef.current?.error) return 'error'
+    return 'idle'
+  }
+
+  const [status, setStatus] = useState<PlantDetailStatus>(getInitialStatus)
+  const [plant, setPlant] = useState<PlantDetailDto | undefined>(() => {
+    if (initialRef.current?.plant) {
+      return initialRef.current.plant
+    }
+    return plantId ? plantDetailDtoCache.get(plantId) : undefined
+  })
+  const [viewModel, setViewModel] = useState<PlantDetailVm | undefined>(() => {
+    if (initialRef.current?.viewModel && initialRef.current?.plant) {
+      return initialRef.current.viewModel
+    }
+    if (initialRef.current?.plant) {
+      return mapPlantDetailDtoToVm(initialRef.current.plant)
+    }
+    return plantId ? plantDetailVmCache.get(plantId) : undefined
+  })
+  const [error, setError] = useState<PlantDetailErrorVm | undefined>(() => {
+    if (initialRef.current?.error) {
+      return initialRef.current.error
+    }
+    return plantId ? plantDetailErrorCache.get(plantId) : undefined
+  })
   const [requestId, setRequestId] = useState<string | undefined>(undefined)
   const abortRef = useRef<AbortController | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
@@ -98,6 +147,39 @@ export const usePlantDetail = ({ plantId }: UsePlantDetailParams): UsePlantDetai
     }
 
     const isInitialRender = reloadToken === 0
+    const initialSnapshot = initialRef.current
+
+    if (isInitialRender && initialSnapshot?.plant) {
+      const vm = initialSnapshot.viewModel ?? mapPlantDetailDtoToVm(initialSnapshot.plant)
+      setPlant(initialSnapshot.plant)
+      setViewModel(vm)
+      setError(undefined)
+      setRequestId(undefined)
+      setStatus(initialSnapshot.status ?? 'success')
+      if (plantId) {
+        plantDetailDtoCache.set(plantId, initialSnapshot.plant)
+        plantDetailVmCache.set(plantId, vm)
+        plantDetailErrorCache.delete(plantId)
+      }
+      initialRef.current = undefined
+      return
+    }
+
+    if (isInitialRender && initialSnapshot?.error) {
+      setPlant(undefined)
+      setViewModel(undefined)
+      setRequestId(undefined)
+      setError(initialSnapshot.error)
+      setStatus(initialSnapshot.status ?? 'error')
+      if (plantId) {
+        plantDetailDtoCache.delete(plantId)
+        plantDetailVmCache.delete(plantId)
+        plantDetailErrorCache.set(plantId, initialSnapshot.error)
+      }
+      initialRef.current = undefined
+      return
+    }
+
     const cachedPlant = plantDetailDtoCache.get(plantId)
     const cachedVm = plantDetailVmCache.get(plantId)
     const cachedError = plantDetailErrorCache.get(plantId)

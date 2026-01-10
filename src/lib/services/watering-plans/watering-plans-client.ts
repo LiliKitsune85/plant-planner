@@ -83,11 +83,44 @@ export type SetWateringPlanResult = {
   requestId?: string
 }
 
+const isValidSource = (
+  source: unknown,
+): source is SetWateringPlanCommand['source'] => {
+  if (!source || typeof source !== 'object') return false
+  const value = source as { type?: unknown }
+  return value.type === 'manual' || value.type === 'ai'
+}
+
+const ensureManualSource = (
+  command: SetWateringPlanCommand,
+): SetWateringPlanCommand => ({
+  ...command,
+  source: { type: 'manual' },
+})
+
+const ensureCommandHasSource = (
+  command: SetWateringPlanCommand,
+): SetWateringPlanCommand => {
+  const candidate = (command as { source?: unknown }).source
+  if (isValidSource(candidate)) {
+    return command
+  }
+
+  console.warn(
+    'setWateringPlan: payload missing source, defaulting to manual source.',
+    { command },
+  )
+
+  return ensureManualSource(command)
+}
+
 export const setWateringPlan = async (
   plantId: string,
   command: SetWateringPlanCommand,
   options: SetWateringPlanOptions = {},
 ): Promise<SetWateringPlanResult> => {
+  const payload = ensureCommandHasSource(command)
+
   let response: Response
   try {
     response = await fetch(`/api/plants/${plantId}/watering-plan`, {
@@ -96,7 +129,7 @@ export const setWateringPlan = async (
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify(command),
+      body: JSON.stringify(payload),
       signal: options.signal,
     })
   } catch (error) {

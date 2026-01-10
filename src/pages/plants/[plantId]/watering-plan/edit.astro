@@ -1,38 +1,36 @@
 ---
-import Layout from '../../../../../layouts/Layout.astro'
-import { WateringPlanEditorView } from '../../../../../components/watering-plan/editor/WateringPlanEditorView'
+import Layout from "@/layouts/Layout.astro";
+import { WateringPlanEditorView } from "@/components/watering-plan/editor/WateringPlanEditorView";
 
-export const prerender = false
+export const prerender = false;
 
-const { plantId } = Astro.params
-const searchParams = Astro.url.searchParams
-const modeParam = searchParams.get('mode')
-const aiRequestIdParam = searchParams.get('ai_request_id')
+const { plantId } = Astro.params;
+const searchParams = Astro.url.searchParams;
+const modeParam = searchParams.get("mode");
+const aiRequestIdParam = searchParams.get("ai_request_id");
 
 const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const normalizeMode = (value: string | null): 'manual' | 'ai' => {
-  if (value === 'ai') return 'ai'
-  return 'manual'
-}
+const normalizeMode = (value: string | null): "manual" | "ai" => {
+  if (value === "ai") return "ai";
+  return "manual";
+};
 
 const normalizeAiRequestId = (value: string | null): string | null => {
-  if (!value) return null
-  const trimmed = value.trim()
-  if (!UUID_REGEX.test(trimmed)) return null
-  return trimmed
-}
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!UUID_REGEX.test(trimmed)) return null;
+  return trimmed;
+};
 
-const hasPlantId = typeof plantId === 'string' && plantId.length > 0
-const safePlantId = hasPlantId ? plantId : ''
-const isPlantIdValid = hasPlantId && UUID_REGEX.test(safePlantId)
-const mode = normalizeMode(modeParam)
-const aiRequestId = normalizeAiRequestId(aiRequestIdParam)
+const hasPlantId = typeof plantId === "string" && plantId.length > 0;
+const safePlantId = hasPlantId ? plantId : "";
+const isPlantIdValid = hasPlantId && UUID_REGEX.test(safePlantId);
+const mode = normalizeMode(modeParam);
+const aiRequestId = normalizeAiRequestId(aiRequestIdParam);
 
-const pageTitle = isPlantIdValid
-  ? 'Edytor planu podlewania'
-  : 'Roślina — niepoprawny identyfikator'
+const pageTitle = isPlantIdValid ? "Edytor planu podlewania" : "Roślina — niepoprawny identyfikator";
 ---
 
 <Layout title={pageTitle}>

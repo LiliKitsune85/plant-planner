@@ -1,0 +1,38 @@
+---
+import { SignUpForm } from "@/components/auth/SignUpForm";
+import { AuthCard } from "@/components/auth/AuthCard";
+import AuthLayout from "@/layouts/AuthLayout.astro";
+
+export const prerender = false;
+
+const rawReturnTo = Astro.url.searchParams.get("returnTo");
+const returnTo = rawReturnTo && rawReturnTo.startsWith("/") ? rawReturnTo : "/calendar";
+
+const footerLinks = [
+  {
+    href: `/auth/login?returnTo=${encodeURIComponent(returnTo)}`,
+    label: "Masz już konto?",
+    description: "Przejdź do logowania i kontynuuj pracę.",
+  },
+  {
+    href: "/auth/forgot-password",
+    label: "Potrzebujesz odświeżyć hasło?",
+    description: "Przypomnimy Ci jak je ustawić na nowo.",
+  },
+];
+---
+
+<AuthLayout
+  title="Plant Planner — rejestracja"
+  heading="Rozpocznij przygodę z Plant Planner"
+  description="Tworząc konto otrzymasz personalizowany plan pielęgnacji i przypomnienia w odpowiednim momencie."
+  eyebrow="Start"
+>
+  <AuthCard
+    title="Załóż konto"
+    description="Wypełnij krótki formularz — całą logikę synchronizacji zrealizujemy po stronie backendu."
+    footerLinks={footerLinks}
+  >
+    <SignUpForm client:load returnTo={returnTo} />
+  </AuthCard>
+</AuthLayout>

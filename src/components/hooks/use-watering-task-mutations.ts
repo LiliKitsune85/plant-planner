@@ -35,6 +35,24 @@ type UseWateringTaskMutationsParams = {
 type PendingMap = Record<string, boolean>
 type OptimisticMap = Record<string, CalendarDayTaskVm>
 
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+
+const collectInvalidationDates = (
+  baseDate: string,
+  ...candidates: Array<string | null | undefined>
+): string[] => {
+  const dates = new Set<string>()
+  if (ISO_DATE_PATTERN.test(baseDate)) {
+    dates.add(baseDate)
+  }
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && ISO_DATE_PATTERN.test(candidate)) {
+      dates.add(candidate)
+    }
+  }
+  return Array.from(dates)
+}
+
 const extractFieldErrors = (
   details: unknown,
 ): Record<string, string[]> | undefined => {
@@ -184,11 +202,20 @@ export const useWateringTaskMutations = ({
     })
   }, [])
 
-  const invalidateCachesAndReload = useCallback(() => {
-    invalidateCalendarDayCacheByDate(date)
-    clearMonthCachesForDate(date)
-    onReload?.()
-  }, [date, onReload])
+  const invalidateCachesForDates = useCallback((dates: string[]) => {
+    dates.forEach((targetDate) => {
+      invalidateCalendarDayCacheByDate(targetDate)
+      clearMonthCachesForDate(targetDate)
+    })
+  }, [])
+
+  const invalidateCachesAndReload = useCallback(
+    (dates: string[] = [date]) => {
+      invalidateCachesForDates(dates)
+      onReload?.()
+    },
+    [date, invalidateCachesForDates, onReload],
+  )
 
   const runTaskMutation = useCallback(
     async (
@@ -272,20 +299,25 @@ export const useWateringTaskMutations = ({
   )
 
   const editTask = useCallback(
-    async (taskId: string, command: UpdateWateringTaskCommand) => {
+    async (task: CalendarDayTaskVm, command: UpdateWateringTaskCommand) => {
       setError(null)
-      setTaskPending(taskId, true)
+      setTaskPending(task.id, true)
       try {
-        await updateWateringTask(taskId, command)
-        invalidateCachesAndReload()
+        await updateWateringTask(task.id, command)
+        const datesToInvalidate = collectInvalidationDates(
+          date,
+          task.completedOn ?? null,
+          command.completed_on ?? null,
+        )
+        invalidateCachesAndReload(datesToInvalidate)
       } catch (err) {
-        setError(mapApiError(err, { taskId }))
+        setError(mapApiError(err, { taskId: task.id }))
         throw err
       } finally {
-        setTaskPending(taskId, false)
+        setTaskPending(task.id, false)
       }
     },
-    [invalidateCachesAndReload, setTaskPending],
+    [date, invalidateCachesAndReload, setTaskPending],
   )
 
   const deleteTaskMutation = useCallback(
@@ -311,7 +343,8 @@ export const useWateringTaskMutations = ({
       setGlobalPending(true)
       try {
         await createAdhocWateringEntry(plantId, command)
-        invalidateCachesAndReload()
+        const datesToInvalidate = collectInvalidationDates(date, command.completed_on ?? null)
+        invalidateCachesAndReload(datesToInvalidate)
       } catch (err) {
         setError(mapApiError(err, { plantId }))
         throw err

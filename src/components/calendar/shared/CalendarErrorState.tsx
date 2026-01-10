@@ -20,6 +20,8 @@ type CalendarErrorStateProps = {
   title?: string
   validationCtaHref?: string
   validationCtaLabel?: string
+  loginHref?: string
+  loginCtaLabel?: string
 }
 
 const shouldShowRetry = (kind: CalendarErrorVm['kind']) =>
@@ -32,6 +34,8 @@ export const CalendarErrorState = ({
   title = 'Nie udało się wczytać danych',
   validationCtaHref = '/calendar',
   validationCtaLabel = 'Przejdź do bieżącego widoku',
+  loginHref = '/auth/login',
+  loginCtaLabel = 'Przejdź do logowania',
 }: CalendarErrorStateProps) => (
   <Card className={cn('border-destructive/30 bg-destructive/5', className)}>
     <CardHeader>
@@ -63,6 +67,11 @@ export const CalendarErrorState = ({
       {error.kind === 'validation' && validationCtaHref && (
         <Button asChild>
           <a href={validationCtaHref}>{validationCtaLabel}</a>
+        </Button>
+      )}
+      {error.kind === 'unauthenticated' && loginHref && (
+        <Button asChild>
+          <a href={loginHref}>{loginCtaLabel}</a>
         </Button>
       )}
     </CardFooter>

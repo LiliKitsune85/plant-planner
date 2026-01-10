@@ -131,6 +131,8 @@ export const CalendarDayView = ({
           title="Nie udało się wczytać listy zadań"
           validationCtaHref="/calendar/day"
           validationCtaLabel="Przejdź do dzisiejszego dnia"
+          loginHref={loginHref}
+          loginCtaLabel="Zaloguj się ponownie"
         />
       </main>
     )
@@ -292,7 +294,7 @@ export const CalendarDayView = ({
 
   const handleEditSubmit = async (command: Parameters<typeof mutations.editTask>[1]) => {
     if (!editingTask) return
-    await mutations.editTask(editingTask.id, command)
+    await mutations.editTask(editingTask, command)
     setEditingTaskId(null)
   }
 
@@ -313,12 +315,19 @@ export const CalendarDayView = ({
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
-      <header className="space-y-2">
-        <p className="text-sm uppercase text-muted-foreground">{headerVm.weekdayLabel}</p>
-        <h1 className="text-3xl font-bold tracking-tight">{headerVm.dateLabel}</h1>
-        <Button asChild variant="link" className="px-0 text-primary">
-          <a href={headerVm.monthHref}>&larr; Powrót do widoku miesiąca</a>
-        </Button>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <p className="text-sm uppercase text-muted-foreground">{headerVm.weekdayLabel}</p>
+          <h1 className="text-3xl font-bold tracking-tight">{headerVm.dateLabel}</h1>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <a href="/calendar/day">Dziś</a>
+          </Button>
+          <Button asChild variant="link" className="px-0 text-primary">
+            <a href={headerVm.monthHref}>&larr; Powrót do widoku miesiąca</a>
+          </Button>
+        </div>
       </header>
 
       <CalendarStatusFilter options={statusOptions} />
@@ -379,7 +388,12 @@ export const CalendarDayView = ({
           }}
         />
       ) : (
-        <CalendarDayEmptyState date={data.date} status={data.status} />
+        <CalendarDayEmptyState
+          date={data.date}
+          status={data.status}
+          onAddAdhoc={() => setAdhocOpen(true)}
+          disableAdhoc={mutations.globalPending}
+        />
       )}
 
       {editingTask && (

@@ -132,6 +132,12 @@ export const buildInvalidPlantIdErrorVm = (): PlantDetailErrorVm => ({
   code: 'INVALID_PLANT_ID',
 })
 
+export const buildPlantNotFoundErrorVm = (): PlantDetailErrorVm => ({
+  kind: 'notFound',
+  message: 'Nie znaleziono tej rośliny lub została usunięta.',
+  code: 'PLANT_NOT_FOUND',
+})
+
 export const buildUnknownPlantDetailErrorVm = (): PlantDetailErrorVm => ({
   kind: 'unknown',
   message: 'Nie udało się pobrać danych rośliny. Spróbuj ponownie później.',

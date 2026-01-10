@@ -108,9 +108,13 @@ Zaawansowani hodowcy często dysponują rozległymi kolekcjami i muszą scalać 
 - Tytuł: Uwierzytelnianie i dostęp
 - Opis: Jako hodowca chcę bezpiecznie tworzyć konto i logować się, aby chronić dane.
 - Kryteria akceptacji:
-  1. Rejestracja wymaga potwierdzenia adresu e-mail oraz silnego hasła.
-  2. Logowanie jest możliwe tylko po podaniu poprawnych danych; sesje wygasają po braku aktywności.
-  3. Dostęp do danych odbywa się wyłącznie po HTTPS.
+  1. Logowanie i rejestracja odbywają się na dedykowanych stronach.
+  2. Logowanie wymaga podania adresu email i hasła.
+  3. Rejestracja wymaga podania adresu email, hasła i potwierdzenia hasła.
+  4. Użytkownik może logować się do systemu poprzez przycisk w prawym górnym rogu.
+  5. Użytkownik może się wylogować z systemu poprzez przycisk w prawym górnym rogu w głównym @Layout.astro.
+  6. Nie korzystamy z zewnętrznych serwisów logowania (np. Google, GitHub).
+  7. Odzyskiwanie hasła powinno być możliwe.
 
 ### US-009 Usunięcie konta i danych
 - ID: US-009

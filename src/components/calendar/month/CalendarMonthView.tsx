@@ -9,6 +9,7 @@ import {
   buildCalendarMonthStatusFilterOptions,
   buildMonthPickerVm,
 } from '@/lib/services/calendar/month-view-model'
+import { getActiveTimezone, getTodayIsoDateInTimezone, getTodayMonthInTimezone } from '@/lib/utils/timezone'
 
 import { CalendarMonthEmptyState } from './CalendarMonthEmptyState'
 import { CalendarMonthGrid } from './CalendarMonthGrid'
@@ -25,6 +26,14 @@ export const CalendarMonthView = ({
   status = 'pending',
 }: CalendarMonthViewProps) => {
   const { status: fetchStatus, data, error, reload } = useCalendarMonth({ month, status })
+  const timezone = useMemo(() => getActiveTimezone(), [])
+  const todayIsoDate = useMemo(() => getTodayIsoDateInTimezone(timezone), [timezone])
+  const todayMonth = useMemo(() => getTodayMonthInTimezone(timezone), [timezone])
+  const loginHref = useMemo(() => {
+    if (typeof window === 'undefined') return '/auth/login'
+    const target = `${window.location.pathname}${window.location.search}`
+    return `/auth/login?returnTo=${encodeURIComponent(target)}`
+  }, [])
 
   const content = useMemo(() => {
     if (fetchStatus === 'error' && error) {
@@ -36,6 +45,8 @@ export const CalendarMonthView = ({
           title="Nie udało się wczytać kalendarza"
           validationCtaHref="/calendar"
           validationCtaLabel="Przejdź do bieżącego miesiąca"
+          loginHref={loginHref}
+          loginCtaLabel="Wróć do logowania"
         />
       )
     }
@@ -44,8 +55,8 @@ export const CalendarMonthView = ({
       return <CalendarMonthSkeleton />
     }
 
-    const pickerVm = buildMonthPickerVm(data)
-    const gridVm = buildCalendarMonthGridVm(data)
+    const pickerVm = buildMonthPickerVm(data, { todayMonth })
+    const gridVm = buildCalendarMonthGridVm(data, { todayIsoDate })
     const statusOptions = buildCalendarMonthStatusFilterOptions(data)
 
     return (
@@ -61,7 +72,7 @@ export const CalendarMonthView = ({
         )}
       </>
     )
-  }, [data, error, fetchStatus, reload])
+  }, [data, error, fetchStatus, loginHref, reload, todayIsoDate, todayMonth])
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6" aria-live="polite">

@@ -21,7 +21,7 @@ const getCalendarDayQuerySchema = z.object({
     .refine(isValidIsoDate, {
       message: 'date must be a valid ISO date (YYYY-MM-DD)',
     }),
-  status: z.enum(['pending', 'completed', 'all']).optional().default('all'),
+  status: z.enum(['pending', 'completed', 'all']).optional().default('pending'),
   sort: z.enum(['species_name', 'due_on']).optional().default('due_on'),
   order: z.enum(['asc', 'desc']).optional().default('asc'),
 })

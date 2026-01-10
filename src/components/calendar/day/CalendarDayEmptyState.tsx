@@ -13,9 +13,16 @@ import type { CalendarTaskStatusFilter } from '@/lib/services/calendar/types'
 type CalendarDayEmptyStateProps = {
   date: string
   status: CalendarTaskStatusFilter
+  onAddAdhoc?: () => void
+  disableAdhoc?: boolean
 }
 
-export const CalendarDayEmptyState = ({ date, status }: CalendarDayEmptyStateProps) => (
+export const CalendarDayEmptyState = ({
+  date,
+  status,
+  onAddAdhoc,
+  disableAdhoc = false,
+}: CalendarDayEmptyStateProps) => (
   <Card className="text-center">
     <CardHeader>
       <CardTitle>Brak zadań dla {date}</CardTitle>
@@ -25,9 +32,14 @@ export const CalendarDayEmptyState = ({ date, status }: CalendarDayEmptyStatePro
       </CardDescription>
     </CardHeader>
     <CardContent />
-    <CardFooter className="justify-center">
+    <CardFooter className="flex flex-wrap justify-center gap-3">
+      {onAddAdhoc ? (
+        <Button onClick={onAddAdhoc} disabled={disableAdhoc}>
+          Dodaj wpis ad hoc
+        </Button>
+      ) : null}
       <Button asChild variant="outline">
-        <a href="/calendar">Wróć do kalendarza</a>
+        <a href="/plants/new">Dodaj roślinę</a>
       </Button>
     </CardFooter>
   </Card>

@@ -19,16 +19,9 @@ const isoDateStringSchema = z
 const manualSourceSchema = z
   .object({
     type: z.literal('manual'),
-    ai_request_id: z
-      .union([z.null(), z.undefined()])
-      .optional()
-      .transform(() => null),
+    ai_request_id: z.null().optional().default(null),
   })
   .strict()
-  .transform((value) => ({
-    ...value,
-    ai_request_id: null,
-  }))
 
 const aiSourceSchema = z
   .object({
@@ -39,6 +32,19 @@ const aiSourceSchema = z
   .strict()
 
 const wateringPlanSourceSchema = z.discriminatedUnion('type', [aiSourceSchema, manualSourceSchema])
+
+const ensureManualSourceFallback = (payload: unknown): unknown => {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return payload
+  const record = payload as Record<string, unknown>
+  if ('source' in record && record.source !== undefined && record.source !== null) {
+    return payload
+  }
+
+  return {
+    ...record,
+    source: { type: 'manual' as const },
+  }
+}
 
 const customStartOnSchema = z
   .union([isoDateStringSchema, z.null()])
@@ -114,7 +120,8 @@ export const parseSetWateringPlanParams = (
 }
 
 export const parseSetWateringPlanRequest = (body: unknown): SetWateringPlanCommand => {
-  const parsed = SetWateringPlanPayloadSchema.safeParse(body)
+  const normalizedBody = ensureManualSourceFallback(body)
+  const parsed = SetWateringPlanPayloadSchema.safeParse(normalizedBody)
 
   if (!parsed.success) {
     throw toValidationError('Invalid request body', parsed.error)

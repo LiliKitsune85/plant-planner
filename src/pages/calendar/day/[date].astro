@@ -1,39 +1,35 @@
 ---
-import Layout from '../../../layouts/Layout.astro'
-import { CalendarDayView } from '../../../components/calendar/day/CalendarDayView'
+import AppShell from "@/layouts/AppShell.astro";
+import { CalendarDayView } from "@/components/calendar/day/CalendarDayView";
 import {
   isValidCalendarDate,
   normalizeCalendarDayOrder,
   normalizeCalendarDaySort,
   normalizeCalendarDayStatus,
-} from '../../../lib/services/calendar/day-view-model'
+} from "@/lib/services/calendar/day-view-model";
 import type {
   CalendarTaskSortField,
   CalendarTaskStatusFilter,
   SortOrder,
-} from '../../../lib/services/calendar/types'
+} from "@/lib/services/calendar/types";
 
-export const prerender = false
+export const prerender = false;
 
-const dateParam = Astro.params.date ?? ''
-const statusParam = Astro.url.searchParams.get('status') ?? undefined
-const sortParam = Astro.url.searchParams.get('sort') ?? undefined
-const orderParam = Astro.url.searchParams.get('order') ?? undefined
+const dateParam = Astro.params.date ?? "";
+const statusParam = Astro.url.searchParams.get("status") ?? undefined;
+const sortParam = Astro.url.searchParams.get("sort") ?? undefined;
+const orderParam = Astro.url.searchParams.get("order") ?? undefined;
 
-const status = normalizeCalendarDayStatus(
-  statusParam as CalendarTaskStatusFilter | undefined,
-)
-const sort = normalizeCalendarDaySort(sortParam as CalendarTaskSortField | undefined)
-const order = normalizeCalendarDayOrder(orderParam as SortOrder | undefined)
+const status = normalizeCalendarDayStatus(statusParam as CalendarTaskStatusFilter | undefined);
+const sort = normalizeCalendarDaySort(sortParam as CalendarTaskSortField | undefined);
+const order = normalizeCalendarDayOrder(orderParam as SortOrder | undefined);
 
-const isValidDate = isValidCalendarDate(dateParam)
-const safeDate = dateParam ?? ''
-const pageTitle = isValidDate
-  ? `Kalendarz — ${safeDate}`
-  : 'Kalendarz — niepoprawna data'
+const isValidDate = isValidCalendarDate(dateParam);
+const safeDate = dateParam ?? "";
+const pageTitle = isValidDate ? `Kalendarz — ${safeDate}` : "Kalendarz — niepoprawna data";
 ---
 
-<Layout title={pageTitle}>
+<AppShell title={pageTitle} section="calendar">
   <CalendarDayView
     date={safeDate}
     status={status}
@@ -41,4 +37,4 @@ const pageTitle = isValidDate
     order={order}
     client:load
   />
-</Layout>
+</AppShell>

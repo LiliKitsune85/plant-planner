@@ -1,8 +1,9 @@
 ---
-import { getTodayCalendarDate } from '../../../lib/services/calendar/day-view-model'
+import { formatDateInTimezone } from '@/lib/utils/timezone'
 
 export const prerender = false
 
-const targetDate = getTodayCalendarDate()
+const timezone = Astro.locals.profileTimezone ?? 'UTC'
+const targetDate = formatDateInTimezone(new Date(), timezone)
 return Astro.redirect(`/calendar/day/${targetDate}`)
 ---

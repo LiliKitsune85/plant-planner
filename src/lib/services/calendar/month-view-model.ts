@@ -157,12 +157,23 @@ export const defaultDayHrefBuilder = (
   return query ? `${base}?${query}` : base
 }
 
-const buildAriaLabel = (date: string, count: number): string => {
-  if (count > 0) {
-    const suffix = count === 1 ? 'podlewanie do wykonania' : 'podlewania do wykonania'
-    return `${date} — ${count} ${suffix}`
+const statusAriaSuffix: Record<CalendarTaskStatusFilter, { plural: string; zero: string }> = {
+  pending: { plural: 'do wykonania', zero: 'do wykonania' },
+  completed: { plural: 'ukończonych', zero: 'ukończonych' },
+  all: { plural: 'łącznie', zero: 'zaplanowanych' },
+}
+
+const buildAriaLabel = (
+  date: string,
+  count: number,
+  status: CalendarTaskStatusFilter,
+): string => {
+  const suffix = statusAriaSuffix[status]
+  if (count === 0) {
+    return `${date} — brak zadań ${suffix.zero}`
   }
-  return `${date} — brak zadań`
+  const unit = count === 1 ? 'zadanie' : count < 5 ? 'zadania' : 'zadań'
+  return `${date} — ${count} ${unit} ${suffix.plural}`
 }
 
 const extractFieldErrors = (
@@ -254,10 +265,10 @@ export const buildCalendarMonthGridVm = (
     return weekdayFormatter(locale).format(date)
   })
 
-  const firstDayOfMonth = new Date(Date.UTC(parsed.year, parsed.monthIndex, 1))
-  const firstWeekday = (firstDayOfMonth.getUTCDay() + 6) % 7 // Monday = 0
+  const firstDayOfMonth = new Date(parsed.year, parsed.monthIndex, 1)
+  const firstWeekday = (firstDayOfMonth.getDay() + 6) % 7 // Monday = 0
   const gridStartDate = new Date(firstDayOfMonth)
-  gridStartDate.setUTCDate(firstDayOfMonth.getUTCDate() - firstWeekday)
+  gridStartDate.setDate(firstDayOfMonth.getDate() - firstWeekday)
 
   const weeks: CalendarMonthGridWeekVm[] = []
 
@@ -266,20 +277,21 @@ export const buildCalendarMonthGridVm = (
     for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
       const offset = weekIndex * 7 + dayIndex
       const cellDate = new Date(gridStartDate)
-      cellDate.setUTCDate(gridStartDate.getUTCDate() + offset)
+      cellDate.setDate(gridStartDate.getDate() + offset)
 
-      const isoDate = formatIsoDate(cellDate)
+      const isoDate = formatLocalIsoDate(cellDate)
       const count = vm.daysByDate[isoDate] ?? 0
-      const isInCurrentMonth = cellDate.getUTCMonth() === parsed.monthIndex
+      const isInCurrentMonth =
+        cellDate.getFullYear() === parsed.year && cellDate.getMonth() === parsed.monthIndex
       const isToday = isoDate === todayIsoDate
 
       days.push({
         date: isoDate,
-        dayNumber: cellDate.getUTCDate(),
+        dayNumber: cellDate.getDate(),
         count,
         isInCurrentMonth,
         isToday,
-        ariaLabel: buildAriaLabel(isoDate, count),
+        ariaLabel: buildAriaLabel(isoDate, count, vm.status),
         href: dayHrefBuilder(isoDate, vm.status),
       })
     }

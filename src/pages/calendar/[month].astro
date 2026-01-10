@@ -1,5 +1,5 @@
 ---
-import Layout from '../../layouts/Layout.astro'
+import AppShell from '../../layouts/AppShell.astro'
 import { CalendarMonthView } from '../../components/calendar/month/CalendarMonthView'
 import {
   normalizeCalendarStatusFilter,
@@ -21,6 +21,6 @@ const pageTitle = isValidMonth
   : 'Kalendarz — niepoprawny miesiąc'
 ---
 
-<Layout title={pageTitle}>
+<AppShell title={pageTitle} section="calendar">
   <CalendarMonthView month={safeMonth} status={status} client:load />
-</Layout>
+</AppShell>

@@ -219,7 +219,7 @@ export const buildCalendarDayValidationErrorVm = (value: string): CalendarDayErr
 
 export const normalizeCalendarDayStatus = (
   status?: CalendarTaskStatusFilter,
-): CalendarTaskStatusFilter => normalizeCalendarStatusFilter(status, 'all')
+): CalendarTaskStatusFilter => normalizeCalendarStatusFilter(status, 'pending')
 
 const sortValues: CalendarTaskSortField[] = ['species_name', 'due_on']
 export const normalizeCalendarDaySort = (
