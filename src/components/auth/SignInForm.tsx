@@ -127,6 +127,7 @@ export const SignInForm = ({ returnTo = '/calendar' }: SignInFormProps) => {
           aria-invalid={Boolean(fieldErrors.email?.length)}
           aria-describedby={fieldErrors.email?.length ? 'auth-email-errors' : undefined}
           disabled={isSubmitting}
+          data-testid="auth-email-input"
         />
         {fieldErrors.email?.length ? (
           <p id="auth-email-errors" className="text-sm text-destructive">
@@ -151,6 +152,7 @@ export const SignInForm = ({ returnTo = '/calendar' }: SignInFormProps) => {
           aria-invalid={Boolean(fieldErrors.password?.length)}
           aria-describedby={fieldErrors.password?.length ? 'auth-password-errors' : undefined}
           disabled={isSubmitting}
+          data-testid="auth-password-input"
         />
         {fieldErrors.password?.length ? (
           <p id="auth-password-errors" className="text-sm text-destructive">
@@ -163,7 +165,7 @@ export const SignInForm = ({ returnTo = '/calendar' }: SignInFormProps) => {
         )}
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="auth-submit-button">
         {isSubmitting ? 'Logowanie…' : 'Zaloguj się'}
       </Button>
 

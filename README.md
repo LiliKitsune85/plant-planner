@@ -9,6 +9,7 @@ Plant Planner focuses on fast manual plant registration plus LLM-powered waterin
 - **Backend & data:** Supabase (PostgreSQL, Auth, and SDK clients) acts as the backend-as-a-service and single source of truth for plant, user, and watering data.
 - **AI services:** OpenRouter.ai provides access to multiple vision-capable models with budget controls for image-based plant recognition.
 - **Tooling & platform:** Node.js 22.14 (see `.nvmrc`), npm, ESLint + Prettier, Husky + lint-staged, GitHub Actions for CI/CD, and DigitalOcean for containerized hosting.
+- **Testing:** Vitest covers unit/contract suites while Playwright drives end-to-end UI regression scenarios (see `.ai/test-plan.md` for scope).
 - Additional architectural notes live in [`.ai/tech-stack.md`](./.ai/tech-stack.md).
 
 ## 4. Getting started locally
@@ -40,8 +41,36 @@ Common tasks:
 - `npm run lint` – run ESLint across `.ts`, `.tsx`, and `.astro` files.
 - `npm run lint:fix` – lint with automatic fixes for common issues.
 - `npm run format` – apply Prettier (with `prettier-plugin-astro`) to supported files.
+- `npm run test` / `npm run test:unit` – execute the Vitest suite once (CI mode).
+- `npm run test:unit:watch` – watch files locally with instant `vi.*` feedback.
+- `npm run test:unit:ui` – open the Vitest UI dashboard for debugging.
+- `npm run test:e2e` – run Chromium-only Playwright checks against the dev server.
+- `npm run test:e2e:headed` – run the same suite with a visible Chrome window.
+- `npm run test:e2e:ui` – triage and rerun scenarios via Playwright UI mode.
+- `npm run test:e2e:codegen` – bootstrap new journeys with the code generator.
+- `npm run test:e2e:trace` – inspect the latest `trace.zip` in the trace viewer.
+- `npm run test:e2e:install` – download/update the Chromium binary Playwright needs.
 
-## 6. Project scope
+## 6. Testing workflow
+### Unit tests (Vitest)
+- Tests live alongside source files as `*.test.ts(x)`/`*.spec.ts(x)` and run under jsdom by default so React components can rely on the DOM, while `src/lib`/`src/db` specs automatically switch to the Node runtime.
+- Shared setup happens in `src/tests/setup-vitest.ts`, which registers `@testing-library/jest-dom` matchers and cleans up React trees after each test.
+- Use the commands above (`test:unit`, `test:unit:watch`, `test:unit:ui`) plus the `vi` helpers, inline snapshots, and typed mocks described in `.cursor/rules/vitest.mdc`.
+- Coverage is configured via `vitest.config.ts` (`v8` provider, `coverage/unit` output) so it can be enabled in CI without extra wiring.
+
+### End-to-end tests (Playwright)
+- `playwright.config.ts` keeps the suite Chromium-only (Desktop Chrome channel) per the Playwright rules and boots the Astro dev server automatically; override the defaults with `PLAYWRIGHT_BASE_URL` or `PLAYWRIGHT_DEV_PORT` when needed.
+- Page Object Models live in `tests/e2e/pages` and are consumed by spec files such as `tests/e2e/smoke.spec.ts`, which already includes a visual check via `expect(page).toHaveScreenshot()`.
+- Run `npm run test:e2e:install` once to grab the browser binary, then use `test:e2e`, `test:e2e:headed`, or `test:e2e:ui` for day-to-day work. `test:e2e:codegen` and `test:e2e:trace` tie into Playwright’s codegen and trace viewer utilities.
+- Each test gets an isolated browser context by default, and traces/screenshots/videos are retained on failure inside `tests/.output` for debugging.
+- **Preparing `.env.test` + Supabase seed for E2E:**
+  1. Duplicate the provided template: `cp env.test.example .env.test`.
+  2. Fill in `SUPABASE_URL` and `SUPABASE_KEY` with the project’s anon/public credentials (the same ones Astro uses locally).
+  3. In Supabase Dashboard → *Authentication → Users*, create a dedicated QA account that the tests can own (e.g. `qa-e2e@example.com` with a strong password). This keeps the run deterministic and avoids rate-limiting real users.
+  4. Place those credentials into `.env.test` as `E2E_USERNAME` / `E2E_PASSWORD` (and optionally keep `E2E_USERNAME_ID` with the Supabase user UUID for future assertions).
+  5. Keep `.env.test` out of version control; Playwright automatically loads it via `playwright.config.ts`, and the test suite will fail fast if the variables are missing.
+
+## 7. Project scope
 - **Core capabilities in scope:**
   - Manual plant intake with mandatory species name, optional metadata (nickname, description, purchase date, photo), and automatic numbering for duplicates.
   - Watering plan generation via LLM within 5 seconds, including frequency guidance and short justification.
@@ -52,10 +81,10 @@ Common tasks:
 - **Explicitly out of scope for the MVP:** photo-based plant recognition, timeline/history views beyond the calendar, reminder notifications, non-watering task tracking, calendar sharing or external integrations, and native/mobile apps.
 - User stories US-001 to US-011 in the [PRD](./.ai/prd.md) detail the complete flow coverage for the MVP.
 
-## 7. Project status
+## 8. Project status
 - **Status:** In development (MVP planning and implementation).
 
-## 8. API snapshot
+## 9. API snapshot
 - `GET /api/calendar/day` – returns a daily list of watering tasks for the authenticated user. Requires `date=YYYY-MM-DD` and supports optional `status=pending|completed|all` plus `sort=species_name|due_on`, `order=asc|desc` (defaults: `status=all`, `sort=due_on`, `order=asc`). Responses follow the standard `{ data, error, meta }` envelope and include a `meta.request_id` UUID so client logs can be correlated with server logs. See [`.ai/api-plan.md`](./.ai/api-plan.md#readme) for the full contract.
 - `GET /api/calendar/month` – returns a per-day task count for the authenticated user’s month view. Requires `month=YYYY-MM` plus optional `status=pending|completed|all` (default `pending`). Responses reuse the `{ data, error, meta }` envelope with a `meta.request_id` UUID, and errors surface as `400 VALIDATION_ERROR`, `401 UNAUTHENTICATED`, or `500 CALENDAR_MONTH_QUERY_FAILED` if the Supabase aggregate fails.
 - `GET /api/plants` – lists a grower’s plants with cursor pagination. Supports optional `q` (1–120 chars, case-insensitive substring search across species name/nickname), `species` (normalized exact match), `sort=created_at|species_name|updated_at` (default `created_at`), `order=asc|desc` (default `desc`), `limit` (1–100, default `20`), and opaque `cursor` tokens generated by previous responses. Returns `data.items` (plant summaries with `display_name`) and `meta.next_cursor`. Errors include `400 INVALID_QUERY_PARAMS`, `401 UNAUTHENTICATED`, and `500 PLANT_LIST_QUERY_FAILED`.
@@ -70,5 +99,5 @@ Common tasks:
 - `POST /api/plants/{plantId}/watering/adhoc` – records a same-day, already-completed watering entry when a grower waters outside of their active plan. Requires auth plus a JSON body with `completed_on` (`YYYY-MM-DD`) and optional `note` (<=500 chars, trimmed to `null`). Success returns `201 Created`, a `Location: /api/watering-tasks/{taskId}` header, and `data.task` mirroring `watering_tasks` summary fields. Error codes: `400 INVALID_JSON/VALIDATION_ERROR`, `401 UNAUTHENTICATED`, `404 PLANT_NOT_FOUND`, `409 TASK_ALREADY_EXISTS`, and `500` variants logged with `meta.request_id`.
 - `DELETE /api/watering-tasks/{taskId}` – removes a watering log. Requires auth, a UUID path param, and the safety guard `confirm=true` query string; requests without the literal `confirm=true` are rejected with `400 CONFIRMATION_REQUIRED`. For `source=adhoc` tasks the row is hard-deleted; for `source=scheduled` tasks the handler only accepts `status=completed` rows and instead resets them to `pending` (clearing `completed_on`, `completed_at`, and `note`) to keep the schedule intact. Responses follow the `{ data, error, meta }` envelope with `meta.request_id` in both success and error cases so clients can correlate logs with server output. Success returns `{ data: { deleted: true, task_id }, error: null }`. Errors include `400 INVALID_TASK_ID`, `401 UNAUTHENTICATED`, `404 TASK_NOT_FOUND`, `409 NOT_ALLOWED` when undoing a non-completed scheduled task, and `500` variants for Supabase failures or inconsistent task states.
 
-## 9. License
+## 10. License
 This project is licensed under the MIT License.

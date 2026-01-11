@@ -10,6 +10,7 @@ Backend - Supabase jako kompleksowe rozwiązanie backendowe:
 - Zapewnia SDK w wielu językach, które posłużą jako Backend-as-a-Service
 - Jest rozwiązaniem open source, które można hostować lokalnie lub na własnym serwerze
 - Posiada wbudowaną autentykację użytkowników
+- W środowisku serwerowym wymagany jest klucz `SUPABASE_SERVICE_ROLE_KEY`, wykorzystywany wyłącznie przez admin klienta Supabase
 
 AI - Komunikacja z modelami przez usługę Openrouter.ai:
 - Dostęp do szerokiej gamy modeli (OpenAI, Anthropic, Google i wiele innych), które pozwolą nam znaleźć rozwiązanie zapewniające wysoką efektywność i niskie koszta
@@ -18,3 +19,7 @@ AI - Komunikacja z modelami przez usługę Openrouter.ai:
 CI/CD i Hosting:
 - Github Actions do tworzenia pipeline’ów CI/CD
 - DigitalOcean do hostowania aplikacji za pośrednictwem obrazu docker
+
+Testy:
+- **Vitest** obsługuje testy jednostkowe i kontraktowe (walidatory Zod, kursory, utilsy domenowe, wybrane serwisy bez I/O).
+- **Playwright** odpowiada za scenariusze end-to-end (logowanie → rośliny → plany → kalendarz), zapewniając regresję UI/API.

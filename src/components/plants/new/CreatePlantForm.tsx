@@ -103,6 +103,7 @@ export const CreatePlantForm = ({
             }
             required
             disabled={isSubmitting}
+            data-testid="create-plant-species"
           />
           <p className="text-sm text-muted-foreground">{FIELD_DESCRIPTORS.species_name.description}</p>
           {fieldErrors.species_name?.length ? (
@@ -224,7 +225,12 @@ export const CreatePlantForm = ({
         >
           Anuluj
         </Button>
-        <Button type="submit" disabled={!canSubmit || isSubmitting} className="sm:min-w-[160px]">
+        <Button
+          type="submit"
+          disabled={!canSubmit || isSubmitting}
+          className="sm:min-w-[160px]"
+          data-testid="create-plant-submit"
+        >
           Dodaj roślinę
         </Button>
       </div>

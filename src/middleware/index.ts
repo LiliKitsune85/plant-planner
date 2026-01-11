@@ -23,9 +23,10 @@ const buildLoginRedirectUrl = (baseUrl: URL): URL => {
 export const onRequest = defineMiddleware(async (context, next) => {
   const supabase = createServerClient<Database>(supabaseUrl, supabaseAnonKey, {
     auth: {
-      persistSession: false,
+      // We need session cookies to persist after /api/auth/sign-in so private routes can be accessed.
+      persistSession: true,
       detectSessionInUrl: false,
-      autoRefreshToken: false,
+      autoRefreshToken: true,
     },
     global: {
       headers: context.request.headers.get("authorization")

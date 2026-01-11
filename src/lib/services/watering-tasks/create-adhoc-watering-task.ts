@@ -6,12 +6,18 @@ import type {
   WateringTaskSummaryFields,
 } from '../../../types'
 import { HttpError } from '../../http/errors'
+import { loadActivePlanForPlant, regenerateTasksForPlan } from './plan-regeneration'
 
 type WateringTaskRow = Tables<'watering_tasks'>
 type PlantRow = Tables<'plants'>
 
 type ServiceContext = {
   requestId?: string
+}
+
+type CreateAdhocWateringTaskClients = {
+  supabaseUser: SupabaseClient
+  supabaseAdmin: SupabaseClient
 }
 
 const WATERING_TASK_COLUMNS = [
@@ -34,12 +40,12 @@ const isUniqueViolation = (error: unknown): boolean =>
   )
 
 const ensurePlantOwnership = async (
-  supabase: SupabaseClient,
+  supabaseUser: SupabaseClient,
   userId: string,
   plantId: string,
   context?: ServiceContext,
 ): Promise<void> => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseUser
     .from('plants')
     .select<Pick<PlantRow, 'id'>>('id')
     .eq('id', plantId)
@@ -96,16 +102,16 @@ type CreateAdhocWateringTaskParams = {
 }
 
 export const createAdhocWateringTask = async (
-  supabase: SupabaseClient,
+  { supabaseUser, supabaseAdmin }: CreateAdhocWateringTaskClients,
   { userId, plantId, command, context }: CreateAdhocWateringTaskParams,
 ): Promise<AdhocWateringResultDto> => {
-  await ensurePlantOwnership(supabase, userId, plantId, context)
+  await ensurePlantOwnership(supabaseUser, userId, plantId, context)
 
   const payload = buildInsertPayload(userId, plantId, command)
   const {
     data,
     error,
-  } = await supabase
+  } = await supabaseAdmin
     .from('watering_tasks')
     .insert(payload)
     .select<WateringTaskRow>(WATERING_TASK_COLUMNS)
@@ -124,6 +130,12 @@ export const createAdhocWateringTask = async (
       requestId: context?.requestId,
     })
     throw new HttpError(500, 'Failed to create watering task', 'TASK_INSERT_FAILED')
+  }
+
+  const plan = await loadActivePlanForPlant(supabaseUser, userId, plantId, context)
+
+  if (plan && plan.schedule_basis === 'completed_on') {
+    await regenerateTasksForPlan(supabaseUser, userId, plan, context)
   }
 
   return {

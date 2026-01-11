@@ -1,4 +1,5 @@
 /// <reference types="astro/client" />
+/// <reference types="vitest" />
 
 import type { SupabaseClient } from './db/supabase.client.ts'
 import type { User } from '@supabase/supabase-js'
@@ -22,6 +23,7 @@ declare global {
 interface ImportMetaEnv {
   readonly SUPABASE_URL: string;
   readonly SUPABASE_KEY: string;
+  readonly SUPABASE_SERVICE_ROLE_KEY: string;
   readonly OPENROUTER_API_KEY?: string;
   readonly OPENROUTER_MODEL?: string;
   readonly APP_BASE_URL?: string;

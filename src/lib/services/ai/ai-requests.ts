@@ -61,11 +61,11 @@ const sanitizeMetrics = (
 }
 
 const updateAiRequest = async (
-  supabase: SupabaseClient,
+  supabaseAdmin: SupabaseClient,
   id: AiRequestRow['id'],
   patch: Partial<AiRequestRow>,
 ): Promise<void> => {
-  const { error } = await supabase.from('ai_requests').update(patch).eq('id', id)
+  const { error } = await supabaseAdmin.from('ai_requests').update(patch).eq('id', id)
 
   if (error) {
     console.error('ai_requests update failed', { error, id, patch })
@@ -81,7 +81,7 @@ type CreateAiRequestParams = {
 }
 
 export const createAiRequest = async (
-  supabase: SupabaseClient,
+  supabaseAdmin: SupabaseClient,
   { userId, plantId, provider = 'openrouter', status = 'skipped' }: CreateAiRequestParams,
 ): Promise<AiRequestRow['id']> => {
   const insert: TablesInsert<'ai_requests'> = {
@@ -91,7 +91,7 @@ export const createAiRequest = async (
     status,
   }
 
-  const { data, error } = await supabase.from('ai_requests').insert(insert).select('id').single()
+  const { data, error } = await supabaseAdmin.from('ai_requests').insert(insert).select('id').single()
 
   if (error || !data) {
     console.error('ai_requests insert failed', { error, userId, plantId })
@@ -108,10 +108,10 @@ type MarkAiRequestSuccessParams = {
 }
 
 export const markAiRequestSuccess = async (
-  supabase: SupabaseClient,
+  supabaseAdmin: SupabaseClient,
   { id, model, metrics = {} }: MarkAiRequestSuccessParams,
 ): Promise<void> => {
-  await updateAiRequest(supabase, id, {
+  await updateAiRequest(supabaseAdmin, id, {
     status: 'success',
     model,
     ...sanitizeMetrics(metrics),
@@ -129,10 +129,10 @@ type MarkAiRequestErrorParams = {
 }
 
 export const markAiRequestError = async (
-  supabase: SupabaseClient,
+  supabaseAdmin: SupabaseClient,
   { id, code, message, model, metrics = {} }: MarkAiRequestErrorParams,
 ): Promise<void> => {
-  await updateAiRequest(supabase, id, {
+  await updateAiRequest(supabaseAdmin, id, {
     status: 'error',
     model: model ?? null,
     ...sanitizeMetrics(metrics),
@@ -147,10 +147,10 @@ type MarkAiRequestRateLimitedParams = {
 }
 
 export const markAiRequestRateLimited = async (
-  supabase: SupabaseClient,
+  supabaseAdmin: SupabaseClient,
   { id, message }: MarkAiRequestRateLimitedParams,
 ): Promise<void> => {
-  await updateAiRequest(supabase, id, {
+  await updateAiRequest(supabaseAdmin, id, {
     status: 'rate_limited',
     error_code: 'AI_RATE_LIMITED',
     error_message: message ?? 'AI rate limit exceeded',

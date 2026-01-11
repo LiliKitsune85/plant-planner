@@ -12,6 +12,7 @@ import {
 import { HttpError, isHttpError } from '../../../lib/http/errors'
 import { deleteWateringTask } from '../../../lib/services/watering-tasks/delete-watering-task'
 import { updateWateringTask } from '../../../lib/services/watering-tasks/update-watering-task'
+import { createAdminClient } from '../../../db/supabase.admin'
 
 export const prerender = false
 
@@ -74,13 +75,17 @@ export const PATCH: APIRoute = async ({ locals, params, request }) => {
     }
 
     const command = parseUpdateWateringTaskRequest(body)
+    const supabaseAdmin = createAdminClient()
 
-    const data: UpdateWateringTaskResultDto = await updateWateringTask(locals.supabase, {
-      userId,
-      taskId,
-      command,
-      context: { requestId },
-    })
+    const data: UpdateWateringTaskResultDto = await updateWateringTask(
+      { supabaseUser: locals.supabase, supabaseAdmin },
+      {
+        userId,
+        taskId,
+        command,
+        context: { requestId },
+      },
+    )
 
     return json(200, { data, error: null, meta: { request_id: requestId } })
   } catch (error) {
@@ -108,11 +113,15 @@ export const DELETE: APIRoute = async ({ locals, params, request, url }) => {
   try {
     const { taskId } = parseDeleteWateringTaskRequest(params, url.searchParams)
     const userId = await requireUserId(locals, request)
+    const supabaseAdmin = createAdminClient()
 
-    const data: DeleteWateringTaskResultDto = await deleteWateringTask(locals.supabase, {
-      userId,
-      taskId,
-    })
+    const data: DeleteWateringTaskResultDto = await deleteWateringTask(
+      { supabaseUser: locals.supabase, supabaseAdmin },
+      {
+        userId,
+        taskId,
+      },
+    )
 
     return json(200, { data, error: null, meta: { request_id: requestId } })
   } catch (error) {

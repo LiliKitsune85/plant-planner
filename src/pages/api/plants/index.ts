@@ -1,14 +1,18 @@
 import type { APIRoute } from "astro";
 
+import type { SupabaseClient } from "../../../db/supabase.client";
+import { createAdminClient } from "../../../db/supabase.admin";
 import { parseCreatePlantRequest } from "../../../lib/api/plants/create-plant-request";
 import { parseListPlantsRequest } from "../../../lib/api/plants/get-plants-request";
 import { HttpError, isHttpError } from "../../../lib/http/errors";
 import { createPlant } from "../../../lib/services/plants/create-plant";
 import { listPlants } from "../../../lib/services/plants/list-plants";
 import { decodeListPlantsCursor } from "../../../lib/services/plants/list-plants-cursor";
+import { suggestWateringPlan } from "../../../lib/services/watering-plans/suggest-watering-plan";
 import type {
   CreatePlantResultDto,
   PlantListDto,
+  PlantSummaryDto,
   WateringSuggestionForCreationDto,
 } from "../../../types";
 
@@ -52,6 +56,93 @@ const requireUserId = async (locals: App.Locals, request: Request) => {
   }
 
   return data.user.id;
+};
+
+const buildSkippedSuggestion = (): WateringSuggestionForCreationDto => ({
+  status: "skipped",
+  ai_request_id: null,
+  explanation: null,
+});
+
+const extractAiRequestId = (error: unknown): string | null => {
+  if (!isHttpError(error)) {
+    return null;
+  }
+
+  const details = error.details;
+  if (details && typeof details === "object" && "ai_request_id" in details) {
+    const value = (details as Record<string, unknown>).ai_request_id;
+    return typeof value === "string" ? value : null;
+  }
+
+  return null;
+};
+
+const logAiSuggestionFailure = (error: unknown, plantId: string, userId: string) => {
+  console.error("Failed to generate AI watering suggestion during plant creation", {
+    error,
+    plantId,
+    userId,
+  });
+};
+
+type GenerateWateringSuggestionParams = {
+  supabaseUser: SupabaseClient;
+  supabaseAdmin: SupabaseClient;
+  userId: string;
+  plant: PlantSummaryDto;
+};
+
+const AI_FAILURE_MESSAGE =
+  "AI watering suggestion is temporarily unavailable. Configure the plan manually.";
+
+const generateWateringSuggestion = async ({
+  supabaseUser,
+  supabaseAdmin,
+  userId,
+  plant,
+}: GenerateWateringSuggestionParams): Promise<WateringSuggestionForCreationDto> => {
+  try {
+    const result = await suggestWateringPlan(
+      { supabaseUser, supabaseAdmin },
+      {
+        userId,
+        plantId: plant.id,
+        command: {
+          context: { species_name: plant.species_name },
+        },
+      },
+    );
+
+    if (result.status === "rate_limited") {
+      const unlockAt = result.quota.unlock_at ?? result.quota.window_resets_at;
+      return {
+        status: "rate_limited",
+        ai_request_id: result.suggestion.ai_request_id,
+        unlock_at: unlockAt,
+      };
+    }
+
+    const suggestion = result.suggestion;
+
+    if (!suggestion.suggestion) {
+      throw new HttpError(500, "AI suggestion payload is invalid", "AI_SUGGESTION_INVALID");
+    }
+
+    return {
+      status: "available",
+      ai_request_id: suggestion.ai_request_id,
+      explanation: suggestion.explanation ?? "AI suggestion ready.",
+      ...suggestion.suggestion,
+    };
+  } catch (error) {
+    logAiSuggestionFailure(error, plant.id, userId);
+    return {
+      status: "error",
+      ai_request_id: extractAiRequestId(error),
+      explanation: AI_FAILURE_MESSAGE,
+    };
+  }
 };
 
 export const GET: APIRoute = async ({ locals, request, url }) => {
@@ -108,13 +199,19 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
 
     const plant = await createPlant(locals.supabase, { userId, plant: command });
 
-    const watering_suggestion: WateringSuggestionForCreationDto = {
-      status: "skipped",
-      ai_request_id: null,
-      explanation: command.generate_watering_suggestion
-        ? "Watering suggestion is not implemented yet"
-        : null,
-    };
+    let watering_suggestion: WateringSuggestionForCreationDto;
+
+    if (!command.generate_watering_suggestion) {
+      watering_suggestion = buildSkippedSuggestion();
+    } else {
+      const supabaseAdmin = createAdminClient();
+      watering_suggestion = await generateWateringSuggestion({
+        supabaseUser: locals.supabase,
+        supabaseAdmin,
+        userId,
+        plant,
+      });
+    }
 
     const result: CreatePlantResultDto = { plant, watering_suggestion };
 

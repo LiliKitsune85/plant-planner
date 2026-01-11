@@ -150,8 +150,8 @@ const loginHref = `/auth/login?returnTo=${encodeURIComponent(currentPath)}`
     </div>
   </div>
 
-  <script is:inline>
+  <script is:inline define:vars={{ profileTimezone }}>
     window.__PLANT_PLANNER_PROFILE__ = window.__PLANT_PLANNER_PROFILE__ ?? {};
-    window.__PLANT_PLANNER_PROFILE__.timezone = {JSON.stringify(profileTimezone)};
+    window.__PLANT_PLANNER_PROFILE__.timezone = profileTimezone;
   </script>
 </Layout>

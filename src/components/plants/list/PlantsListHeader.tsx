@@ -13,7 +13,9 @@ export const PlantsListHeader = () => {
         </p>
       </div>
       <Button asChild size="lg" className="w-full sm:w-auto">
-        <a href="/plants/new">Dodaj roślinę</a>
+        <a href="/plants/new" data-testid="plants-add-plant-button">
+          Dodaj roślinę
+        </a>
       </Button>
     </header>
   )

@@ -10,6 +10,7 @@ import {
 import { HttpError, isHttpError } from '../../../../../lib/http/errors'
 import { createAdhocWateringTask } from '../../../../../lib/services/watering-tasks/create-adhoc-watering-task'
 import { requireUserId } from '../../../../../lib/api/auth/require-user-id'
+import { createAdminClient } from '../../../../../db/supabase.admin'
 
 export const prerender = false
 
@@ -72,13 +73,17 @@ export const POST: APIRoute = async ({ locals, params, request }) => {
     }
 
     const command = parseAdhocWateringRequest(body)
+    const supabaseAdmin = createAdminClient()
 
-    const data: AdhocWateringResultDto = await createAdhocWateringTask(locals.supabase, {
-      userId,
-      plantId,
-      command,
-      context: { requestId },
-    })
+    const data: AdhocWateringResultDto = await createAdhocWateringTask(
+      { supabaseUser: locals.supabase, supabaseAdmin },
+      {
+        userId,
+        plantId,
+        command,
+        context: { requestId },
+      },
+    )
 
     const location = new URL(`/api/watering-tasks/${data.task.id}`, request.url).toString()
 

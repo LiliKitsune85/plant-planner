@@ -17,6 +17,11 @@ import {
 import type { OpenRouterChatMessageInput, ResponseFormatJsonSchema } from '../openrouter.service'
 import { OpenRouterService } from '../openrouter.service'
 
+type SuggestWateringPlanClients = {
+  supabaseUser: SupabaseClient
+  supabaseAdmin: SupabaseClient
+}
+
 type ServiceParams = {
   userId: string
   plantId: string
@@ -41,11 +46,11 @@ export type SuggestWateringPlanServiceResult =
   | SuggestWateringPlanRateLimited
 
 const ensurePlantOwnership = async (
-  supabase: SupabaseClient,
+  supabaseUser: SupabaseClient,
   userId: string,
   plantId: string,
 ): Promise<void> => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseUser
     .from('plants')
     .select('id')
     .eq('id', plantId)
@@ -212,25 +217,36 @@ const WATERING_PLAN_MODEL_PARAMS = {
   frequency_penalty: 0.2,
 } as const
 
-const buildRateLimitedSuggestion = (
-  aiRequestId: string,
-): WateringPlanSuggestionDto => ({
+const buildRateLimitedSuggestion = (aiRequestId: string): WateringPlanSuggestionDto => ({
   ai_request_id: aiRequestId,
   suggestion: null,
   explanation: null,
 })
 
+const withAiRequestDetails = (details: unknown, aiRequestId: string): Record<string, unknown> => {
+  if (details && typeof details === 'object') {
+    return {
+      ...(details as Record<string, unknown>),
+      ai_request_id: aiRequestId,
+    }
+  }
+
+  return { ai_request_id: aiRequestId }
+}
+
 export const suggestWateringPlan = async (
-  supabase: SupabaseClient,
+  clients: SuggestWateringPlanClients,
   { userId, plantId, command, now }: ServiceParams,
 ): Promise<SuggestWateringPlanServiceResult> => {
-  await ensurePlantOwnership(supabase, userId, plantId)
+  const { supabaseUser, supabaseAdmin } = clients
 
-  const quota = await getAiQuota(supabase, { userId, now })
-  const aiRequestId = await createAiRequest(supabase, { userId, plantId })
+  await ensurePlantOwnership(supabaseUser, userId, plantId)
+
+  const quota = await getAiQuota(supabaseUser, { userId, now })
+  const aiRequestId = await createAiRequest(supabaseAdmin, { userId, plantId })
 
   if (quota.is_rate_limited) {
-    await markAiRequestRateLimited(supabase, {
+    await markAiRequestRateLimited(supabaseAdmin, {
       id: aiRequestId,
       message: 'Hourly AI quota exceeded',
     })
@@ -254,7 +270,7 @@ export const suggestWateringPlan = async (
       responseSchema,
     )
 
-    await markAiRequestSuccess(supabase, {
+    await markAiRequestSuccess(supabaseAdmin, {
       id: aiRequestId,
       model: aiResult.model,
       metrics: {
@@ -278,22 +294,27 @@ export const suggestWateringPlan = async (
     }
   } catch (error) {
     if (isHttpError(error)) {
-      await markAiRequestError(supabase, {
+      await markAiRequestError(supabaseAdmin, {
         id: aiRequestId,
         code: error.code,
         message: error.message,
       })
-      throw error
+      throw new HttpError(error.status, error.message, error.code, withAiRequestDetails(error.details, aiRequestId))
     }
 
-    await markAiRequestError(supabase, {
+    await markAiRequestError(supabaseAdmin, {
       id: aiRequestId,
       code: 'AI_PROVIDER_ERROR',
       message: 'AI provider failed unexpectedly',
     })
 
     console.error('Unhandled error while suggesting watering plan', { error, aiRequestId })
-    throw error
+    throw new HttpError(
+      500,
+      'AI provider failed unexpectedly',
+      'AI_PROVIDER_ERROR',
+      withAiRequestDetails(null, aiRequestId),
+    )
   }
 }
 

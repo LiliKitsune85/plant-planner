@@ -10,6 +10,7 @@ import {
 } from '../../../../../lib/api/watering-plans/suggest-watering-plan-request'
 import { HttpError, isHttpError } from '../../../../../lib/http/errors'
 import { suggestWateringPlan } from '../../../../../lib/services/watering-plans/suggest-watering-plan'
+import { createAdminClient } from '../../../../../db/supabase.admin'
 
 export const prerender = false
 
@@ -68,7 +69,11 @@ export const POST: APIRoute = async ({ locals, params, request }) => {
     }
 
     const command = parseSuggestWateringPlanRequest(body)
-    const result = await suggestWateringPlan(locals.supabase, { userId, plantId, command })
+    const supabaseAdmin = createAdminClient()
+    const result = await suggestWateringPlan(
+      { supabaseUser: locals.supabase, supabaseAdmin },
+      { userId, plantId, command },
+    )
 
     if (result.status === 'rate_limited') {
       return json<WateringPlanSuggestionDto>(429, {

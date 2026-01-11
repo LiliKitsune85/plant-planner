@@ -35,6 +35,7 @@ export const AiSuggestionToggle = ({
           onCheckedChange={onCheckedChange}
           disabled={disabled}
           aria-describedby={rateLimit ? 'create-plant-ai-limit' : undefined}
+          data-testid="create-plant-ai-toggle"
         />
       </div>
       {showLimitInfo ? (

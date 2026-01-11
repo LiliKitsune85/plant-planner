@@ -7,12 +7,17 @@ import type {
   WateringTaskSummaryFields,
 } from '../../../types'
 import { HttpError } from '../../http/errors'
+import { loadActivePlanForPlant, regenerateTasksForPlan } from './plan-regeneration'
 
 type WateringTaskRow = Tables<'watering_tasks'>
-type WateringPlanRow = Tables<'watering_plans'>
 
 type ServiceContext = {
   requestId?: string
+}
+
+type UpdateWateringTaskClients = {
+  supabaseUser: SupabaseClient
+  supabaseAdmin: SupabaseClient
 }
 
 type UpdateWateringTaskParams = {
@@ -22,7 +27,7 @@ type UpdateWateringTaskParams = {
   context?: ServiceContext
 }
 
-type RegenerationReason = 'TASK_COMPLETED' | 'TASK_UNDONE' | 'COMPLETION_DATE_CHANGED'
+type RegenerationReason = 'TASK_COMPLETED' | 'TASK_UNDONE' | 'COMPLETION_DATE_CHANGED' | 'ADHOC_COMPLETION_CHANGED'
 
 const WATERING_TASK_COLUMNS = [
   'id',
@@ -35,18 +40,6 @@ const WATERING_TASK_COLUMNS = [
   'completed_at',
   'completed_on',
 ].join(',')
-
-const ACTIVE_PLAN_COLUMNS = [
-  'id',
-  'plant_id',
-  'interval_days',
-  'horizon_days',
-  'schedule_basis',
-  'start_from',
-  'custom_start_on',
-].join(',')
-
-const DEFAULT_HORIZON_DAYS = 90
 
 const isPostgresError = (error: unknown, code: string): boolean =>
   Boolean(
@@ -67,12 +60,12 @@ const mapTaskToSummary = (row: WateringTaskRow): WateringTaskSummaryFields => ({
 })
 
 const loadTask = async (
-  supabase: SupabaseClient,
+  supabaseAdmin: SupabaseClient,
   userId: string,
   taskId: string,
   context?: ServiceContext,
 ): Promise<WateringTaskRow> => {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('watering_tasks')
     .select<WateringTaskRow>(WATERING_TASK_COLUMNS)
     .eq('id', taskId)
@@ -91,84 +84,11 @@ const loadTask = async (
   return data
 }
 
-const loadActivePlan = async (
-  supabase: SupabaseClient,
-  userId: string,
-  plantId: string,
-  context: ServiceContext | undefined,
-): Promise<WateringPlanRow | null> => {
-  const { data, error } = await supabase
-    .from('watering_plans')
-    .select<WateringPlanRow>(ACTIVE_PLAN_COLUMNS)
-    .eq('user_id', userId)
-    .eq('plant_id', plantId)
-    .eq('is_active', true)
-    .maybeSingle()
-
-  if (error) {
-    console.error('updateWateringTask: active plan lookup failed', {
-      error,
-      userId,
-      plantId,
-      context,
-    })
-    throw new HttpError(500, 'Failed to load watering plan', 'ACTIVE_PLAN_LOOKUP_FAILED')
-  }
-
-  return data
-}
-
-const triggerTaskRegeneration = async (
-  supabase: SupabaseClient,
-  userId: string,
-  plan: WateringPlanRow,
-  context: ServiceContext | undefined,
-  taskId: string,
-): Promise<void> => {
-  const payload = {
-    p_user_id: userId,
-    p_plant_id: plan.plant_id,
-    p_plan_id: plan.id,
-    p_interval_days: plan.interval_days,
-    p_horizon_days: plan.horizon_days ?? DEFAULT_HORIZON_DAYS,
-    p_schedule_basis: plan.schedule_basis,
-    p_start_from: plan.start_from,
-    p_custom_start_on: plan.custom_start_on,
-  }
-
-  if (
-    payload.p_interval_days === null ||
-    payload.p_interval_days === undefined ||
-    payload.p_schedule_basis === null
-  ) {
-    console.error('updateWateringTask: plan missing required scheduling fields', {
-      planId: plan.id,
-      userId,
-      taskId,
-      context,
-    })
-    throw new HttpError(500, 'Plan is missing scheduling configuration', 'PLAN_INVALID')
-  }
-
-  const { data, error } = await supabase.rpc('regenerate_watering_tasks', payload).single()
-
-  if (error || !data) {
-    console.error('updateWateringTask: task regeneration failed', {
-      error,
-      userId,
-      taskId,
-      planId: plan.id,
-      context,
-    })
-    throw new HttpError(500, 'Failed to regenerate watering tasks', 'TASK_REGENERATION_FAILED')
-  }
-}
-
 export const updateWateringTask = async (
-  supabase: SupabaseClient,
+  { supabaseUser, supabaseAdmin }: UpdateWateringTaskClients,
   { userId, taskId, command, context }: UpdateWateringTaskParams,
 ): Promise<UpdateWateringTaskResultDto> => {
-  const task = await loadTask(supabase, userId, taskId, context)
+  const task = await loadTask(supabaseAdmin, userId, taskId, context)
 
   const nextStatus = command.status ?? task.status
   const completedOnInput = command.completed_on
@@ -226,6 +146,8 @@ export const updateWateringTask = async (
     } else if (completedOnChanged) {
       regenerationReason = 'COMPLETION_DATE_CHANGED'
     }
+  } else if (task.source === 'adhoc' && completedOnChanged) {
+    regenerationReason = 'ADHOC_COMPLETION_CHANGED'
   }
 
   const updatePayload: Partial<WateringTaskRow> = {}
@@ -258,7 +180,7 @@ export const updateWateringTask = async (
   const {
     data: updatedTask,
     error: updateError,
-  } = await supabase
+  } = await supabaseAdmin
     .from('watering_tasks')
     .update(updatePayload)
     .eq('id', taskId)
@@ -290,14 +212,14 @@ export const updateWateringTask = async (
   }
 
   if (regenerationReason) {
-    const plan = await loadActivePlan(supabase, userId, task.plant_id, context)
+    const plan = await loadActivePlanForPlant(supabaseUser, userId, task.plant_id, context)
 
     if (!plan) {
-      throw new HttpError(409, 'Active watering plan not found for plant', 'WATERING_PLAN_NOT_FOUND')
-    }
-
-    if (plan.schedule_basis === 'completed_on') {
-      await triggerTaskRegeneration(supabase, userId, plan, context, taskId)
+      if (task.source === 'scheduled') {
+        throw new HttpError(409, 'Active watering plan not found for plant', 'WATERING_PLAN_NOT_FOUND')
+      }
+    } else if (plan.schedule_basis === 'completed_on') {
+      await regenerateTasksForPlan(supabaseUser, userId, plan, context)
       scheduleEffect = {
         tasks_regenerated: true,
         reason: regenerationReason,
