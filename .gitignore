@@ -10,6 +10,9 @@ node_modules/
 # temporary files
 .tmp/
 
+# accidental local Scoop artifacts / broken submodules (should never be committed)
+[-OtherParameters/
+
 # logs
 npm-debug.log*
 yarn-debug.log*
