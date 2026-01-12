@@ -82,7 +82,7 @@ Common tasks:
 - User stories US-001 to US-011 in the [PRD](./.ai/prd.md) detail the complete flow coverage for the MVP.
 
 ## 8. Project status
-- **Status:** In development (MVP planning and implementation).
+- **Status:** In development (MVP implementation).
 
 ## 9. API snapshot
 - `GET /api/calendar/day` – returns a daily list of watering tasks for the authenticated user. Requires `date=YYYY-MM-DD` and supports optional `status=pending|completed|all` plus `sort=species_name|due_on`, `order=asc|desc` (defaults: `status=all`, `sort=due_on`, `order=asc`). Responses follow the standard `{ data, error, meta }` envelope and include a `meta.request_id` UUID so client logs can be correlated with server logs. See [`.ai/api-plan.md`](./.ai/api-plan.md#readme) for the full contract.
