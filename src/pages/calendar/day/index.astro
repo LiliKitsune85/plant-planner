@@ -1,9 +1,9 @@
 ---
-import { formatDateInTimezone } from '@/lib/utils/timezone'
+import { formatDateInTimezone } from "@/lib/utils/timezone";
 
-export const prerender = false
+export const prerender = false;
 
-const timezone = Astro.locals.profileTimezone ?? 'UTC'
-const targetDate = formatDateInTimezone(new Date(), timezone)
-return Astro.redirect(`/calendar/day/${targetDate}`)
+const timezone = Astro.locals.profileTimezone ?? "UTC";
+const targetDate = formatDateInTimezone(new Date(), timezone);
+return Astro.redirect(`/calendar/day/${targetDate}`);
 ---

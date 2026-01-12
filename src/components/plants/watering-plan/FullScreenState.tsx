@@ -1,9 +1,9 @@
-import type { FC, ReactNode } from 'react'
+import type { FC, ReactNode } from "react";
 
-type FullScreenStateProps = {
-  title: string
-  description?: string
-  action?: ReactNode
+interface FullScreenStateProps {
+  title: string;
+  description?: string;
+  action?: ReactNode;
 }
 
 export const FullScreenState: FC<FullScreenStateProps> = ({ title, description, action }) => {
@@ -18,8 +18,7 @@ export const FullScreenState: FC<FullScreenStateProps> = ({ title, description, 
       </div>
       {action ? <div className="flex flex-wrap items-center justify-center gap-3">{action}</div> : null}
     </section>
-  )
-}
+  );
+};
 
-FullScreenState.displayName = 'FullScreenState'
-
+FullScreenState.displayName = "FullScreenState";

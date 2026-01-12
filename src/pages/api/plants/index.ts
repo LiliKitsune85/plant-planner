@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { logger } from "@/lib/logger";
 
 import type { SupabaseClient } from "../../../db/supabase.client";
 import { createAdminClient } from "../../../db/supabase.admin";
@@ -18,17 +19,13 @@ import type {
 
 export const prerender = false;
 
-type ApiEnvelope<TData> = {
+interface ApiEnvelope<TData> {
   data: TData | null;
   error: { code: string; message: string } | null;
   meta: Record<string, unknown>;
-};
+}
 
-const json = <TData>(
-  status: number,
-  envelope: ApiEnvelope<TData>,
-  headers?: HeadersInit,
-): Response =>
+const json = <TData>(status: number, envelope: ApiEnvelope<TData>, headers?: HeadersInit): Response =>
   new Response(JSON.stringify(envelope), {
     status,
     headers: {
@@ -47,9 +44,7 @@ const getBearerToken = (request: Request): string | null => {
 
 const requireUserId = async (locals: App.Locals, request: Request) => {
   const token = getBearerToken(request);
-  const { data, error } = token
-    ? await locals.supabase.auth.getUser(token)
-    : await locals.supabase.auth.getUser();
+  const { data, error } = token ? await locals.supabase.auth.getUser(token) : await locals.supabase.auth.getUser();
 
   if (error || !data.user) {
     throw new HttpError(401, "Unauthenticated", "UNAUTHENTICATED");
@@ -79,22 +74,21 @@ const extractAiRequestId = (error: unknown): string | null => {
 };
 
 const logAiSuggestionFailure = (error: unknown, plantId: string, userId: string) => {
-  console.error("Failed to generate AI watering suggestion during plant creation", {
+  logger.error("Failed to generate AI watering suggestion during plant creation", {
     error,
     plantId,
     userId,
   });
 };
 
-type GenerateWateringSuggestionParams = {
+interface GenerateWateringSuggestionParams {
   supabaseUser: SupabaseClient;
   supabaseAdmin: SupabaseClient;
   userId: string;
   plant: PlantSummaryDto;
-};
+}
 
-const AI_FAILURE_MESSAGE =
-  "AI watering suggestion is temporarily unavailable. Configure the plan manually.";
+const AI_FAILURE_MESSAGE = "AI watering suggestion is temporarily unavailable. Configure the plan manually.";
 
 const generateWateringSuggestion = async ({
   supabaseUser,
@@ -111,7 +105,7 @@ const generateWateringSuggestion = async ({
         command: {
           context: { species_name: plant.species_name },
         },
-      },
+      }
     );
 
     if (result.status === "rate_limited") {
@@ -175,7 +169,7 @@ export const GET: APIRoute = async ({ locals, request, url }) => {
       });
     }
 
-    console.error("Unhandled error in GET /api/plants", { error });
+    logger.error("Unhandled error in GET /api/plants", { error });
 
     return json(500, {
       data: null,
@@ -221,7 +215,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
       {
         "Cache-Control": "no-store",
         Location: new URL(`/api/plants/${plant.id}`, url).toString(),
-      },
+      }
     );
   } catch (error) {
     if (isHttpError(error)) {
@@ -232,11 +226,11 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
           error: { code: error.code, message: error.message },
           meta: {},
         },
-        { "Cache-Control": "no-store" },
+        { "Cache-Control": "no-store" }
       );
     }
 
-    console.error("Unhandled error in POST /api/plants", { error });
+    logger.error("Unhandled error in POST /api/plants", { error });
 
     return json(
       500,
@@ -245,8 +239,7 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
         error: { code: "INTERNAL_SERVER_ERROR", message: "Internal server error" },
         meta: {},
       },
-      { "Cache-Control": "no-store" },
+      { "Cache-Control": "no-store" }
     );
   }
 };
-

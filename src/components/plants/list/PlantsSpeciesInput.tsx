@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from "react";
 
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 
-type PlantsSpeciesInputProps = {
-  value: string
-  pending?: boolean
-  debounceMs?: number
-  maxLength?: number
-  onCommit: (value: string) => void
+interface PlantsSpeciesInputProps {
+  value: string;
+  pending?: boolean;
+  debounceMs?: number;
+  maxLength?: number;
+  onCommit: (value: string) => void;
 }
 
 export const PlantsSpeciesInput = ({
@@ -17,48 +17,58 @@ export const PlantsSpeciesInput = ({
   maxLength = 120,
   onCommit,
 }: PlantsSpeciesInputProps) => {
-  const [draft, setDraft] = useState(value)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const lastCommittedRef = useRef(value)
+  const [draft, setDraft] = useState(value);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCommittedRef = useRef(value);
 
   useEffect(() => {
-    setDraft(value)
-    lastCommittedRef.current = value
-  }, [value])
+    setDraft(value);
+    lastCommittedRef.current = value;
+  }, [value]);
 
   useEffect(() => {
-    if (draft === lastCommittedRef.current) return
+    if (draft === lastCommittedRef.current) return;
 
-    timeoutRef.current && clearTimeout(timeoutRef.current)
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
     timeoutRef.current = setTimeout(() => {
-      lastCommittedRef.current = draft
-      onCommit(draft)
-    }, debounceMs)
+      lastCommittedRef.current = draft;
+      onCommit(draft);
+    }, debounceMs);
 
     return () => {
-      timeoutRef.current && clearTimeout(timeoutRef.current)
-    }
-  }, [debounceMs, draft, onCommit])
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [debounceMs, draft, onCommit]);
 
   useEffect(() => {
     return () => {
-      timeoutRef.current && clearTimeout(timeoutRef.current)
-    }
-  }, [])
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleClear = () => {
-    timeoutRef.current && clearTimeout(timeoutRef.current)
-    setDraft('')
-    lastCommittedRef.current = ''
-    onCommit('')
-  }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    setDraft("");
+    lastCommittedRef.current = "";
+    onCommit("");
+  };
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    timeoutRef.current && clearTimeout(timeoutRef.current)
-    lastCommittedRef.current = draft
-    onCommit(draft)
-  }
+    event.preventDefault();
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    lastCommittedRef.current = draft;
+    onCommit(draft);
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
@@ -94,7 +104,7 @@ export const PlantsSpeciesInput = ({
         Filtr działa na dokładne dopasowanie znormalizowanej nazwy gatunku.
       </p>
     </form>
-  )
-}
+  );
+};
 
-PlantsSpeciesInput.displayName = 'PlantsSpeciesInput'
+PlantsSpeciesInput.displayName = "PlantsSpeciesInput";

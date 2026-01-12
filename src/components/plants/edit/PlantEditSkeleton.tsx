@@ -22,7 +22,7 @@ export const PlantEditSkeleton = () => {
         <div className="h-10 w-32 rounded bg-muted" />
       </div>
     </div>
-  )
-}
+  );
+};
 
-PlantEditSkeleton.displayName = 'PlantEditSkeleton'
+PlantEditSkeleton.displayName = "PlantEditSkeleton";

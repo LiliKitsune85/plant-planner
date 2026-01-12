@@ -1,28 +1,23 @@
-import { useMemo } from 'react'
-import type { FC } from 'react'
+import { useMemo } from "react";
+import type { FC } from "react";
 
-import type { PlantDetailMutationErrorVm } from '@/components/plants/detail/types'
-import { Button } from '@/components/ui/button'
-import {
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-} from '@/components/ui/modal'
-import { Textarea } from '@/components/ui/textarea'
+import type { PlantDetailMutationErrorVm } from "@/components/plants/detail/types";
+import { Button } from "@/components/ui/button";
+import { Modal, ModalBody, ModalFooter, ModalHeader } from "@/components/ui/modal";
+import { Textarea } from "@/components/ui/textarea";
 
-export type WaterTodayDialogProps = {
-  open: boolean
-  note: string
-  pending: boolean
-  error?: PlantDetailMutationErrorVm | null
-  onOpenChange: (open: boolean) => void
-  onNoteChange: (note: string) => void
-  onConfirm: () => Promise<void> | void
-  calendarHref: string
+export interface WaterTodayDialogProps {
+  open: boolean;
+  note: string;
+  pending: boolean;
+  error?: PlantDetailMutationErrorVm | null;
+  onOpenChange: (open: boolean) => void;
+  onNoteChange: (note: string) => void;
+  onConfirm: () => Promise<void> | void;
+  calendarHref: string;
 }
 
-const NOTE_LIMIT = 500
+const NOTE_LIMIT = 500;
 
 export const WaterTodayDialog: FC<WaterTodayDialogProps> = ({
   open,
@@ -34,7 +29,7 @@ export const WaterTodayDialog: FC<WaterTodayDialogProps> = ({
   onConfirm,
   calendarHref,
 }) => {
-  const remaining = useMemo(() => Math.max(0, NOTE_LIMIT - note.length), [note.length])
+  const remaining = useMemo(() => Math.max(0, NOTE_LIMIT - note.length), [note.length]);
 
   return (
     <Modal open={open} onClose={() => onOpenChange(false)} labelledBy="water-today-title">
@@ -46,8 +41,7 @@ export const WaterTodayDialog: FC<WaterTodayDialogProps> = ({
       </ModalHeader>
       <ModalBody>
         <p className="text-base text-muted-foreground">
-          Możesz dodać krótką notatkę (opcjonalnie), aby zapamiętać dodatkowe szczegóły, np. ilość wody
-          lub nawóz.
+          Możesz dodać krótką notatkę (opcjonalnie), aby zapamiętać dodatkowe szczegóły, np. ilość wody lub nawóz.
         </p>
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium text-foreground">Notatka (opcjonalna)</span>
@@ -63,12 +57,12 @@ export const WaterTodayDialog: FC<WaterTodayDialogProps> = ({
         {error ? (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
             {error.message}
-            {error.code === 'TASK_ALREADY_EXISTS' ? (
+            {error.code === "TASK_ALREADY_EXISTS" ? (
               <p className="mt-2 text-xs">
-                Wejdź do{' '}
+                Wejdź do{" "}
                 <a href={calendarHref} className="underline">
                   kalendarza
-                </a>{' '}
+                </a>{" "}
                 aby zobaczyć wcześniejszy wpis.
               </p>
             ) : null}
@@ -80,12 +74,11 @@ export const WaterTodayDialog: FC<WaterTodayDialogProps> = ({
           Anuluj
         </Button>
         <Button onClick={() => void onConfirm()} disabled={pending}>
-          {pending ? 'Zapisywanie…' : 'Zapisz podlewanie'}
+          {pending ? "Zapisywanie…" : "Zapisz podlewanie"}
         </Button>
       </ModalFooter>
     </Modal>
-  )
-}
+  );
+};
 
-WaterTodayDialog.displayName = 'WaterTodayDialog'
-
+WaterTodayDialog.displayName = "WaterTodayDialog";

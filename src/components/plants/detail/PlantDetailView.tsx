@@ -1,37 +1,34 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { FC } from 'react'
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { FC } from "react";
 
-import { Button } from '@/components/ui/button'
-import { usePlantDetail } from '@/components/hooks/use-plant-detail'
-import type { PlantDetailInitialState } from '@/components/hooks/use-plant-detail'
-import { usePlantDetailMutations } from '@/components/hooks/use-plant-detail-mutations'
-import { PlantDetailErrorState } from '@/components/plants/detail/PlantDetailErrorState'
-import { PlantDetailHeader } from '@/components/plants/detail/PlantDetailHeader'
-import { PlantDetailSkeleton } from '@/components/plants/detail/PlantDetailSkeleton'
-import { PlantIdentityCard } from '@/components/plants/detail/PlantIdentityCard'
-import { PlantPlanSection } from '@/components/plants/detail/PlantPlanSection'
-import { PlantActionsBar } from '@/components/plants/detail/PlantActionsBar'
-import { DeletePlantDialog } from '@/components/plants/detail/DeletePlantDialog'
-import { WaterTodayDialog } from '@/components/plants/detail/WaterTodayDialog'
-import {
-  buildPlantActionsVm,
-  getTodayIsoDate,
-} from '@/lib/services/plants/detail-view-model'
+import { Button } from "@/components/ui/button";
+import { usePlantDetail } from "@/components/hooks/use-plant-detail";
+import type { PlantDetailInitialState } from "@/components/hooks/use-plant-detail";
+import { usePlantDetailMutations } from "@/components/hooks/use-plant-detail-mutations";
+import { PlantDetailErrorState } from "@/components/plants/detail/PlantDetailErrorState";
+import { PlantDetailHeader } from "@/components/plants/detail/PlantDetailHeader";
+import { PlantDetailSkeleton } from "@/components/plants/detail/PlantDetailSkeleton";
+import { PlantIdentityCard } from "@/components/plants/detail/PlantIdentityCard";
+import { PlantPlanSection } from "@/components/plants/detail/PlantPlanSection";
+import { PlantActionsBar } from "@/components/plants/detail/PlantActionsBar";
+import { DeletePlantDialog } from "@/components/plants/detail/DeletePlantDialog";
+import { WaterTodayDialog } from "@/components/plants/detail/WaterTodayDialog";
+import { buildPlantActionsVm, getTodayIsoDate } from "@/lib/services/plants/detail-view-model";
 
-type PlantDetailViewProps = {
-  plantId: string
-  initialData?: PlantDetailInitialState
+interface PlantDetailViewProps {
+  plantId: string;
+  initialData?: PlantDetailInitialState;
 }
 
 export const PlantDetailView: FC<PlantDetailViewProps> = ({ plantId, initialData }) => {
   const { status, plant, viewModel, error, reload } = usePlantDetail({
     plantId,
     initial: initialData,
-  })
-  const [waterSuccessMessage, setWaterSuccessMessage] = useState<string | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [waterDialogOpen, setWaterDialogOpen] = useState(false)
-  const [waterNote, setWaterNote] = useState('')
+  });
+  const [waterSuccessMessage, setWaterSuccessMessage] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [waterDialogOpen, setWaterDialogOpen] = useState(false);
+  const [waterNote, setWaterNote] = useState("");
 
   const {
     pendingWaterToday,
@@ -42,95 +39,87 @@ export const PlantDetailView: FC<PlantDetailViewProps> = ({ plantId, initialData
     deletePlant,
     clearWaterError,
     clearDeleteError,
-  } = usePlantDetailMutations({ plantId })
+  } = usePlantDetailMutations({ plantId });
 
-  const actionsVm = useMemo(
-    () => (viewModel ? buildPlantActionsVm(viewModel) : null),
-    [viewModel],
-  )
-  const fallbackCalendarHref = useMemo(() => `/calendar/day/${getTodayIsoDate()}`, [])
-  const calendarHref = actionsVm?.calendarHref ?? fallbackCalendarHref
-  const calendarLabel = actionsVm?.calendarLabel
+  const actionsVm = useMemo(() => (viewModel ? buildPlantActionsVm(viewModel) : null), [viewModel]);
+  const fallbackCalendarHref = useMemo(() => `/calendar/day/${getTodayIsoDate()}`, []);
+  const calendarHref = actionsVm?.calendarHref ?? fallbackCalendarHref;
+  const calendarLabel = actionsVm?.calendarLabel;
 
-  const detailPath = plantId ? `/plants/${plantId}` : '/plants'
-  const loginHref = useMemo(
-    () => `/auth/login?returnTo=${encodeURIComponent(detailPath)}`,
-    [detailPath],
-  )
+  const detailPath = plantId ? `/plants/${plantId}` : "/plants";
+  const loginHref = useMemo(() => `/auth/login?returnTo=${encodeURIComponent(detailPath)}`, [detailPath]);
 
   useEffect(() => {
-    if (!waterSuccessMessage) return
-    if (typeof window === 'undefined') return
-    const timer = window.setTimeout(() => setWaterSuccessMessage(null), 5000)
-    return () => window.clearTimeout(timer)
-  }, [waterSuccessMessage])
+    if (!waterSuccessMessage) return;
+    if (typeof window === "undefined") return;
+    const timer = window.setTimeout(() => setWaterSuccessMessage(null), 5000);
+    return () => window.clearTimeout(timer);
+  }, [waterSuccessMessage]);
 
   const handleWaterDialogOpen = useCallback(() => {
-    clearWaterError()
-    setWaterSuccessMessage(null)
-    setWaterDialogOpen(true)
-  }, [clearWaterError])
+    clearWaterError();
+    setWaterSuccessMessage(null);
+    setWaterDialogOpen(true);
+  }, [clearWaterError]);
 
   const handleWaterDialogChange = useCallback(
     (open: boolean) => {
       if (!open) {
-        clearWaterError()
+        clearWaterError();
       }
-      setWaterDialogOpen(open)
+      setWaterDialogOpen(open);
     },
-    [clearWaterError],
-  )
+    [clearWaterError]
+  );
 
   const handleWaterConfirm = useCallback(async () => {
-    clearWaterError()
-    setWaterSuccessMessage(null)
-    const payload = waterNote.trim().length > 0 ? waterNote.trim() : undefined
-    const result = await waterToday(payload)
+    clearWaterError();
+    setWaterSuccessMessage(null);
+    const payload = waterNote.trim().length > 0 ? waterNote.trim() : undefined;
+    const result = await waterToday(payload);
     if (result.ok) {
-      setWaterDialogOpen(false)
-      setWaterNote('')
-      setWaterSuccessMessage('Zapisano podlewanie na dziś.')
+      setWaterDialogOpen(false);
+      setWaterNote("");
+      setWaterSuccessMessage("Zapisano podlewanie na dziś.");
     }
-  }, [clearWaterError, waterNote, waterToday])
+  }, [clearWaterError, waterNote, waterToday]);
 
   const handleDeleteClick = useCallback(() => {
-    clearDeleteError()
-    setDeleteDialogOpen(true)
-  }, [clearDeleteError])
+    clearDeleteError();
+    setDeleteDialogOpen(true);
+  }, [clearDeleteError]);
 
   const handleDeleteConfirm = useCallback(async () => {
-    const result = await deletePlant()
+    const result = await deletePlant();
     if (result.ok) {
-      setDeleteDialogOpen(false)
-      if (typeof window !== 'undefined') {
-        window.location.href = '/plants'
+      setDeleteDialogOpen(false);
+      if (typeof window !== "undefined") {
+        window.location.href = "/plants";
       }
     }
-  }, [deletePlant])
+  }, [deletePlant]);
 
-  const handleDialogOpenChange = useCallback((open: boolean) => {
-    if (!open) {
-      clearDeleteError()
-    }
-    setDeleteDialogOpen(open)
-  }, [clearDeleteError])
+  const handleDialogOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) {
+        clearDeleteError();
+      }
+      setDeleteDialogOpen(open);
+    },
+    [clearDeleteError]
+  );
 
   return (
     <main className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6" aria-live="polite">
       <PlantDetailHeader backHref="/plants" />
 
-      {status === 'error' && error ? (
-        <PlantDetailErrorState
-          error={error}
-          onRetry={reload}
-          loginHref={loginHref}
-          backHref="/plants"
-        />
+      {status === "error" && error ? (
+        <PlantDetailErrorState error={error} onRetry={reload} loginHref={loginHref} backHref="/plants" />
       ) : null}
 
-      {status === 'loading' ? <PlantDetailSkeleton /> : null}
+      {status === "loading" ? <PlantDetailSkeleton /> : null}
 
-      {status === 'success' && plant && viewModel && actionsVm ? (
+      {status === "success" && plant && viewModel && actionsVm ? (
         <div className="space-y-6">
           <PlantIdentityCard plant={viewModel.plant} />
           <PlantPlanSection
@@ -162,7 +151,7 @@ export const PlantDetailView: FC<PlantDetailViewProps> = ({ plantId, initialData
 
       <DeletePlantDialog
         open={deleteDialogOpen}
-        plantDisplayName={plant?.plant.display_name ?? 'roślina'}
+        plantDisplayName={plant?.plant.display_name ?? "roślina"}
         pending={pendingDelete}
         error={deleteError}
         onOpenChange={handleDialogOpenChange}
@@ -180,8 +169,7 @@ export const PlantDetailView: FC<PlantDetailViewProps> = ({ plantId, initialData
         calendarHref={calendarHref}
       />
     </main>
-  )
-}
+  );
+};
 
-PlantDetailView.displayName = 'PlantDetailView'
-
+PlantDetailView.displayName = "PlantDetailView";

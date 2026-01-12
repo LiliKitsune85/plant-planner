@@ -1,12 +1,12 @@
 ---
-import Layout from '../../layouts/Layout.astro'
-import { PlantsListView } from '../../components/plants/list/PlantsListView'
-import { buildInitialPlantsListQuery } from '../../lib/services/plants/list-view-model'
+import Layout from "../../layouts/Layout.astro";
+import { PlantsListView } from "../../components/plants/list/PlantsListView";
+import { buildInitialPlantsListQuery } from "../../lib/services/plants/list-view-model";
 
-export const prerender = false
+export const prerender = false;
 
-const initialQuery = buildInitialPlantsListQuery(Astro.url)
-const pageTitle = initialQuery.q ? `Rośliny — wyniki dla "${initialQuery.q}"` : 'Lista roślin'
+const initialQuery = buildInitialPlantsListQuery(Astro.url);
+const pageTitle = initialQuery.q ? `Rośliny — wyniki dla "${initialQuery.q}"` : "Lista roślin";
 ---
 
 <Layout title={pageTitle}>

@@ -1,93 +1,90 @@
-import { randomUUID } from 'node:crypto'
+import { randomUUID } from "node:crypto";
+import { logger } from "@/lib/logger";
 
-import type { APIRoute } from 'astro'
+import type { APIRoute } from "astro";
 
-import type { WateringPlanSuggestionDto } from '../../../../../types'
-import { requireUserId } from '../../../../../lib/api/auth/require-user-id'
+import type { WateringPlanSuggestionDto } from "../../../../../types";
+import { requireUserId } from "../../../../../lib/api/auth/require-user-id";
 import {
   parseSuggestWateringPlanParams,
   parseSuggestWateringPlanRequest,
-} from '../../../../../lib/api/watering-plans/suggest-watering-plan-request'
-import { HttpError, isHttpError } from '../../../../../lib/http/errors'
-import { suggestWateringPlan } from '../../../../../lib/services/watering-plans/suggest-watering-plan'
-import { createAdminClient } from '../../../../../db/supabase.admin'
+} from "../../../../../lib/api/watering-plans/suggest-watering-plan-request";
+import { HttpError, isHttpError } from "../../../../../lib/http/errors";
+import { suggestWateringPlan } from "../../../../../lib/services/watering-plans/suggest-watering-plan";
+import { createAdminClient } from "../../../../../db/supabase.admin";
 
-export const prerender = false
+export const prerender = false;
 
-type ApiError = {
-  code: string
-  message: string
-  details?: unknown
+interface ApiError {
+  code: string;
+  message: string;
+  details?: unknown;
 }
 
-type ApiEnvelope<TData> = {
-  data: TData | null
-  error: ApiError | null
-  meta: Record<string, unknown>
+interface ApiEnvelope<TData> {
+  data: TData | null;
+  error: ApiError | null;
+  meta: Record<string, unknown>;
 }
 
-const json = <TData>(
-  status: number,
-  envelope: ApiEnvelope<TData>,
-  headers: Record<string, string> = {},
-): Response =>
+const json = <TData>(status: number, envelope: ApiEnvelope<TData>, headers: Record<string, string> = {}): Response =>
   new Response(JSON.stringify(envelope), {
     status,
     headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store',
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
       ...headers,
     },
-  })
+  });
 
 const handleHttpError = (error: HttpError, requestId: string): Response =>
   json<WateringPlanSuggestionDto>(error.status, {
     data: null,
     error: { code: error.code, message: error.message, details: error.details ?? null },
     meta: { request_id: requestId },
-  })
+  });
 
 const handleUnexpectedError = (requestId: string): Response =>
   json<WateringPlanSuggestionDto>(500, {
     data: null,
-    error: { code: 'INTERNAL_SERVER_ERROR', message: 'Internal server error' },
+    error: { code: "INTERNAL_SERVER_ERROR", message: "Internal server error" },
     meta: { request_id: requestId },
-  })
+  });
 
 export const POST: APIRoute = async ({ locals, params, request }) => {
-  const requestId = randomUUID()
+  const requestId = randomUUID();
 
   try {
-    const { plantId } = parseSuggestWateringPlanParams(params)
-    const userId = await requireUserId(locals, request)
+    const { plantId } = parseSuggestWateringPlanParams(params);
+    const userId = await requireUserId(locals, request);
 
-    let body: unknown
+    let body: unknown;
     try {
-      body = await request.json()
+      body = await request.json();
     } catch {
-      throw new HttpError(400, 'Invalid JSON body', 'INVALID_JSON')
+      throw new HttpError(400, "Invalid JSON body", "INVALID_JSON");
     }
 
-    const command = parseSuggestWateringPlanRequest(body)
-    const supabaseAdmin = createAdminClient()
+    const command = parseSuggestWateringPlanRequest(body);
+    const supabaseAdmin = createAdminClient();
     const result = await suggestWateringPlan(
       { supabaseUser: locals.supabase, supabaseAdmin },
-      { userId, plantId, command },
-    )
+      { userId, plantId, command }
+    );
 
-    if (result.status === 'rate_limited') {
+    if (result.status === "rate_limited") {
       return json<WateringPlanSuggestionDto>(429, {
         data: result.suggestion,
         error: {
-          code: 'AI_RATE_LIMITED',
-          message: 'AI rate limit exceeded',
+          code: "AI_RATE_LIMITED",
+          message: "AI rate limit exceeded",
           details: { unlock_at: result.quota.unlock_at },
         },
         meta: {
           request_id: requestId,
           limit_per_hour: result.quota.limit_per_hour,
         },
-      })
+      });
     }
 
     return json<WateringPlanSuggestionDto>(200, {
@@ -97,23 +94,22 @@ export const POST: APIRoute = async ({ locals, params, request }) => {
         request_id: requestId,
         response_time_budget_ms: 5000,
       },
-    })
+    });
   } catch (error) {
     if (isHttpError(error)) {
-      console.error('Handled error in POST /api/plants/[plantId]/watering-plan/suggest', {
+      logger.error("Handled error in POST /api/plants/[plantId]/watering-plan/suggest", {
         error,
         requestId,
         plantId: params?.plantId,
-      })
-      return handleHttpError(error, requestId)
+      });
+      return handleHttpError(error, requestId);
     }
 
-    console.error('Unhandled error in POST /api/plants/[plantId]/watering-plan/suggest', {
+    logger.error("Unhandled error in POST /api/plants/[plantId]/watering-plan/suggest", {
       error,
       requestId,
       plantId: params?.plantId,
-    })
-    return handleUnexpectedError(requestId)
+    });
+    return handleUnexpectedError(requestId);
   }
-}
-
+};

@@ -1,33 +1,33 @@
-import { useMemo, useState, useId } from 'react'
-import type { FC, FormEvent } from 'react'
+import { useMemo, useState, useId } from "react";
+import type { FC, FormEvent } from "react";
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import type {
   WateringPlanFormErrors,
   WateringPlanFormValues,
   WateringPlanFormField,
-} from '@/components/plants/watering-plan/types'
+} from "@/components/plants/watering-plan/types";
 
-export type WateringPlanFormProps = {
-  value: WateringPlanFormValues
-  errors: WateringPlanFormErrors
-  isSaving: boolean
-  onChange: (patch: Partial<WateringPlanFormValues>) => void
-  onSubmit: () => void
-  onBack: () => void
+export interface WateringPlanFormProps {
+  value: WateringPlanFormValues;
+  errors: WateringPlanFormErrors;
+  isSaving: boolean;
+  onChange: (patch: Partial<WateringPlanFormValues>) => void;
+  onSubmit: () => void;
+  onBack: () => void;
 }
 
 const FIELD_LABELS: Record<WateringPlanFormField, string> = {
-  interval_days: 'Interwał (dni)',
-  start_from: 'Rozpocznij od',
-  custom_start_on: 'Niestandardowa data startu',
-  horizon_days: 'Horyzont planu (dni)',
-  schedule_basis: 'Podstawa harmonogramu',
-  overdue_policy: 'Zaległe zadania',
-  form: 'Formularz',
-}
+  interval_days: "Interwał (dni)",
+  start_from: "Rozpocznij od",
+  custom_start_on: "Niestandardowa data startu",
+  horizon_days: "Horyzont planu (dni)",
+  schedule_basis: "Podstawa harmonogramu",
+  overdue_policy: "Zaległe zadania",
+  form: "Formularz",
+};
 
 export const WateringPlanForm: FC<WateringPlanFormProps> = ({
   value,
@@ -37,33 +37,30 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
   onSubmit,
   onBack,
 }) => {
-  const advancedPanelId = useId()
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  const advancedPanelId = useId();
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const getError = useMemo(() => {
-    return (field: WateringPlanFormField) => errors.fieldErrors[field]?.[0]
-  }, [errors.fieldErrors])
+    return (field: WateringPlanFormField) => errors.fieldErrors[field]?.[0];
+  }, [errors.fieldErrors]);
 
   const handleSubmit = (event: FormEvent) => {
-    event.preventDefault()
-    onSubmit()
-  }
+    event.preventDefault();
+    onSubmit();
+  };
 
-  const intervalError = getError('interval_days')
-  const horizonError = getError('horizon_days')
-  const customDateError = getError('custom_start_on')
-  const startFromError = getError('start_from')
-  const scheduleBasisError = getError('schedule_basis')
-  const overduePolicyError = getError('overdue_policy')
+  const intervalError = getError("interval_days");
+  const horizonError = getError("horizon_days");
+  const customDateError = getError("custom_start_on");
+  const startFromError = getError("start_from");
+  const scheduleBasisError = getError("schedule_basis");
+  const overduePolicyError = getError("overdue_policy");
 
-  const handleStartFromChange = (
-    next: WateringPlanFormValues['start_from'],
-    shouldClearCustomDate = false,
-  ) => {
+  const handleStartFromChange = (next: WateringPlanFormValues["start_from"], shouldClearCustomDate = false) => {
     onChange({
       start_from: next,
-      ...(shouldClearCustomDate ? { custom_start_on: '' } : {}),
-    })
-  }
+      ...(shouldClearCustomDate ? { custom_start_on: "" } : {}),
+    });
+  };
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit} noValidate>
@@ -78,7 +75,7 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
             inputMode="numeric"
             value={value.interval_days}
             aria-invalid={Boolean(intervalError)}
-            aria-describedby={intervalError ? 'interval_days-error' : undefined}
+            aria-describedby={intervalError ? "interval_days-error" : undefined}
             onChange={(event) => onChange({ interval_days: event.target.value })}
           />
           {intervalError ? (
@@ -97,14 +94,12 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
                   type="radio"
                   name="start_from"
                   value="today"
-                  checked={value.start_from === 'today'}
-                  onChange={() => handleStartFromChange('today', true)}
+                  checked={value.start_from === "today"}
+                  onChange={() => handleStartFromChange("today", true)}
                 />
                 Dzisiaj
               </span>
-              <span className="mt-1 text-xs text-muted-foreground">
-                Pierwsze zadanie zostanie utworzone od dziś.
-              </span>
+              <span className="mt-1 text-xs text-muted-foreground">Pierwsze zadanie zostanie utworzone od dziś.</span>
             </label>
             <label className="flex h-full cursor-pointer flex-col rounded-2xl border border-border/70 p-3 transition focus-within:ring-2 focus-within:ring-ring">
               <span className="flex items-center gap-2 text-sm font-medium">
@@ -112,14 +107,12 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
                   type="radio"
                   name="start_from"
                   value="purchase_date"
-                  checked={value.start_from === 'purchase_date'}
-                  onChange={() => handleStartFromChange('purchase_date', true)}
+                  checked={value.start_from === "purchase_date"}
+                  onChange={() => handleStartFromChange("purchase_date", true)}
                 />
                 Data zakupu
               </span>
-              <span className="mt-1 text-xs text-muted-foreground">
-                Użyj daty zakupu zapisanej w profilu rośliny.
-              </span>
+              <span className="mt-1 text-xs text-muted-foreground">Użyj daty zakupu zapisanej w profilu rośliny.</span>
             </label>
             <label className="flex h-full cursor-pointer flex-col rounded-2xl border border-border/70 p-3 transition focus-within:ring-2 focus-within:ring-ring">
               <span className="flex items-center gap-2 text-sm font-medium">
@@ -127,8 +120,8 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
                   type="radio"
                   name="start_from"
                   value="custom_date"
-                  checked={value.start_from === 'custom_date'}
-                  onChange={() => handleStartFromChange('custom_date')}
+                  checked={value.start_from === "custom_date"}
+                  onChange={() => handleStartFromChange("custom_date")}
                 />
                 Niestandardowa data
               </span>
@@ -137,12 +130,10 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
               </span>
             </label>
           </div>
-          {startFromError ? (
-            <p className="text-sm text-destructive">{startFromError}</p>
-          ) : null}
+          {startFromError ? <p className="text-sm text-destructive">{startFromError}</p> : null}
         </fieldset>
 
-        {value.start_from === 'custom_date' ? (
+        {value.start_from === "custom_date" ? (
           <div className="space-y-2">
             <Label htmlFor="custom_start_on">{FIELD_LABELS.custom_start_on}</Label>
             <Input
@@ -150,7 +141,7 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
               type="date"
               value={value.custom_start_on}
               aria-invalid={Boolean(customDateError)}
-              aria-describedby={customDateError ? 'custom_start_on-error' : undefined}
+              aria-describedby={customDateError ? "custom_start_on-error" : undefined}
               onChange={(event) => onChange({ custom_start_on: event.target.value })}
             />
             {customDateError ? (
@@ -164,9 +155,7 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
 
       <div className="space-y-4 rounded-3xl border border-border/60 bg-muted/20 p-4">
         <div className="flex items-start justify-between gap-4">
-          <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
-            Zaawansowane
-          </p>
+          <p className="text-sm font-medium uppercase tracking-wide text-muted-foreground">Zaawansowane</p>
           <button
             type="button"
             onClick={() => setShowAdvanced((prev) => !prev)}
@@ -174,7 +163,7 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
             aria-controls={advancedPanelId}
             className="text-xs font-semibold uppercase tracking-wider text-primary"
           >
-            {showAdvanced ? 'Ukryj' : 'Pokaż'}
+            {showAdvanced ? "Ukryj" : "Pokaż"}
           </button>
         </div>
         {!showAdvanced ? (
@@ -186,7 +175,7 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
           id={advancedPanelId}
           hidden={!showAdvanced}
           aria-hidden={!showAdvanced}
-          className={showAdvanced ? 'space-y-4' : 'space-y-4'}
+          className={showAdvanced ? "space-y-4" : "space-y-4"}
         >
           <div className="space-y-2">
             <Label htmlFor="horizon_days">{FIELD_LABELS.horizon_days}</Label>
@@ -198,7 +187,7 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
               inputMode="numeric"
               value={value.horizon_days}
               aria-invalid={Boolean(horizonError)}
-              aria-describedby={horizonError ? 'horizon_days-error' : undefined}
+              aria-describedby={horizonError ? "horizon_days-error" : undefined}
               onChange={(event) => onChange({ horizon_days: event.target.value })}
             />
             {horizonError ? (
@@ -215,9 +204,9 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
               className="w-full rounded-2xl border border-border/60 bg-background p-3 text-sm"
               value={value.schedule_basis}
               aria-invalid={Boolean(scheduleBasisError)}
-              aria-describedby={scheduleBasisError ? 'schedule_basis-error' : undefined}
+              aria-describedby={scheduleBasisError ? "schedule_basis-error" : undefined}
               onChange={(event) =>
-                onChange({ schedule_basis: event.target.value as WateringPlanFormValues['schedule_basis'] })
+                onChange({ schedule_basis: event.target.value as WateringPlanFormValues["schedule_basis"] })
               }
             >
               <option value="completed_on">Wykonanie zadania</option>
@@ -237,9 +226,9 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
               className="w-full rounded-2xl border border-border/60 bg-background p-3 text-sm"
               value={value.overdue_policy}
               aria-invalid={Boolean(overduePolicyError)}
-              aria-describedby={overduePolicyError ? 'overdue_policy-error' : undefined}
+              aria-describedby={overduePolicyError ? "overdue_policy-error" : undefined}
               onChange={(event) =>
-                onChange({ overdue_policy: event.target.value as WateringPlanFormValues['overdue_policy'] })
+                onChange({ overdue_policy: event.target.value as WateringPlanFormValues["overdue_policy"] })
               }
             >
               <option value="carry_forward">Przenieś i nadrób</option>
@@ -265,8 +254,7 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
         </Button>
       </div>
     </form>
-  )
-}
+  );
+};
 
-WateringPlanForm.displayName = 'WateringPlanForm'
-
+WateringPlanForm.displayName = "WateringPlanForm";

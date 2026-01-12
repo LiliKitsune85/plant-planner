@@ -1,26 +1,26 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useState } from "react";
 
-import { Button } from '@/components/ui/button'
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui/modal'
-import type { AdhocWateringCommand, PlantListItemDto } from '@/types'
+import { Button } from "@/components/ui/button";
+import { Modal, ModalBody, ModalFooter, ModalHeader } from "@/components/ui/modal";
+import type { AdhocWateringCommand, PlantListItemDto } from "@/types";
 
-import { PlantPicker } from './PlantPicker'
+import { PlantPicker } from "./PlantPicker";
 
-type AdhocWateringDialogProps = {
-  open: boolean
-  defaultCompletedOn: string
-  pending?: boolean
+interface AdhocWateringDialogProps {
+  open: boolean;
+  defaultCompletedOn: string;
+  pending?: boolean;
   error?: {
-    message: string
-    fieldErrors?: Record<string, string[]>
-  } | null
-  onOpenChange: (open: boolean) => void
-  onSubmit: (plantId: string, command: AdhocWateringCommand) => Promise<void> | void
+    message: string;
+    fieldErrors?: Record<string, string[]>;
+  } | null;
+  onOpenChange: (open: boolean) => void;
+  onSubmit: (plantId: string, command: AdhocWateringCommand) => Promise<void> | void;
 }
 
-type FieldErrors = Record<string, string[]>
+type FieldErrors = Record<string, string[]>;
 
-const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 export const AdhocWateringDialog = ({
   open,
@@ -30,67 +30,70 @@ export const AdhocWateringDialog = ({
   onOpenChange,
   onSubmit,
 }: AdhocWateringDialogProps) => {
-  const titleId = useId()
-  const [selectedPlant, setSelectedPlant] = useState<PlantListItemDto | null>(null)
-  const [completedOn, setCompletedOn] = useState(defaultCompletedOn)
-  const [note, setNote] = useState('')
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
-  const [formError, setFormError] = useState<string | null>(null)
+  const titleId = useId();
+  const plantPickerInputId = useId();
+  const completedOnId = useId();
+  const noteId = useId();
+  const [selectedPlant, setSelectedPlant] = useState<PlantListItemDto | null>(null);
+  const [completedOn, setCompletedOn] = useState(defaultCompletedOn);
+  const [note, setNote] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) return
-    setCompletedOn(defaultCompletedOn)
-    setNote('')
-    setFieldErrors({})
-    setFormError(null)
-  }, [defaultCompletedOn, open])
+    if (!open) return;
+    setCompletedOn(defaultCompletedOn);
+    setNote("");
+    setFieldErrors({});
+    setFormError(null);
+  }, [defaultCompletedOn, open]);
 
   useEffect(() => {
     if (error?.fieldErrors) {
-      setFieldErrors(error.fieldErrors)
+      setFieldErrors(error.fieldErrors);
     }
     if (error && !error.fieldErrors) {
-      setFormError(error.message)
+      setFormError(error.message);
     }
-  }, [error])
+  }, [error]);
 
   const validate = (): boolean => {
-    const nextFieldErrors: FieldErrors = {}
-    let nextFormError: string | null = null
+    const nextFieldErrors: FieldErrors = {};
+    const nextFormError: string | null = null;
 
     if (!selectedPlant) {
-      nextFieldErrors.plant = ['Wybierz roślinę do wpisu.']
+      nextFieldErrors.plant = ["Wybierz roślinę do wpisu."];
     }
 
     if (!completedOn || !ISO_DATE_REGEX.test(completedOn)) {
-      nextFieldErrors.completed_on = ['Podaj poprawną datę wykonania w formacie RRRR-MM-DD.']
+      nextFieldErrors.completed_on = ["Podaj poprawną datę wykonania w formacie RRRR-MM-DD."];
     }
 
     if (note.trim().length > 500) {
-      nextFieldErrors.note = ['Notatka nie może przekraczać 500 znaków.']
+      nextFieldErrors.note = ["Notatka nie może przekraczać 500 znaków."];
     }
 
-    setFieldErrors(nextFieldErrors)
-    setFormError(nextFormError)
+    setFieldErrors(nextFieldErrors);
+    setFormError(nextFormError);
 
-    return Object.keys(nextFieldErrors).length === 0 && !nextFormError
-  }
+    return Object.keys(nextFieldErrors).length === 0 && !nextFormError;
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    setFormError(null)
+    event.preventDefault();
+    setFormError(null);
 
     if (!validate() || !selectedPlant) {
-      return
+      return;
     }
 
     const command: AdhocWateringCommand = {
       completed_on: completedOn,
-      note: note.trim() === '' ? null : note.trim(),
-    }
+      note: note.trim() === "" ? null : note.trim(),
+    };
 
-    await onSubmit(selectedPlant.id, command)
-  }
+    await onSubmit(selectedPlant.id, command);
+  };
 
   return (
     <Modal open={open} onClose={() => onOpenChange(false)} labelledBy={titleId}>
@@ -107,16 +110,24 @@ export const AdhocWateringDialog = ({
 
         <ModalBody>
           <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">Roślina</label>
-            <PlantPicker value={selectedPlant} onChange={setSelectedPlant} disabled={pending} />
-            {fieldErrors.plant && (
-              <p className="text-sm text-destructive">{fieldErrors.plant.join(' ')}</p>
-            )}
+            <label className="text-sm font-medium text-foreground" htmlFor={plantPickerInputId}>
+              Roślina
+            </label>
+            <PlantPicker
+              value={selectedPlant}
+              onChange={setSelectedPlant}
+              disabled={pending}
+              inputId={plantPickerInputId}
+            />
+            {fieldErrors.plant && <p className="text-sm text-destructive">{fieldErrors.plant.join(" ")}</p>}
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">Data wykonania</label>
+            <label className="text-sm font-medium text-foreground" htmlFor={completedOnId}>
+              Data wykonania
+            </label>
             <input
+              id={completedOnId}
               type="date"
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               value={completedOn}
@@ -124,13 +135,16 @@ export const AdhocWateringDialog = ({
               disabled={pending}
             />
             {fieldErrors.completed_on && (
-              <p className="text-sm text-destructive">{fieldErrors.completed_on.join(' ')}</p>
+              <p className="text-sm text-destructive">{fieldErrors.completed_on.join(" ")}</p>
             )}
           </div>
 
           <div className="space-y-1">
-            <label className="text-sm font-medium text-foreground">Notatka (opcjonalnie)</label>
+            <label className="text-sm font-medium text-foreground" htmlFor={noteId}>
+              Notatka (opcjonalnie)
+            </label>
             <textarea
+              id={noteId}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               rows={4}
               value={note}
@@ -138,12 +152,8 @@ export const AdhocWateringDialog = ({
               disabled={pending}
               maxLength={500}
             />
-            <p className="text-xs text-muted-foreground">
-              Pozostało {500 - note.length} znaków
-            </p>
-            {fieldErrors.note && (
-              <p className="text-sm text-destructive">{fieldErrors.note.join(' ')}</p>
-            )}
+            <p className="text-xs text-muted-foreground">Pozostało {500 - note.length} znaków</p>
+            {fieldErrors.note && <p className="text-sm text-destructive">{fieldErrors.note.join(" ")}</p>}
           </div>
         </ModalBody>
 
@@ -157,7 +167,7 @@ export const AdhocWateringDialog = ({
         </ModalFooter>
       </form>
     </Modal>
-  )
-}
+  );
+};
 
-AdhocWateringDialog.displayName = 'AdhocWateringDialog'
+AdhocWateringDialog.displayName = "AdhocWateringDialog";

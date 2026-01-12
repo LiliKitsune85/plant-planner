@@ -1,5 +1,5 @@
-const weekdayPlaceholders = Array.from({ length: 7 })
-const dayPlaceholders = Array.from({ length: 42 })
+const weekdayPlaceholders = Array.from({ length: 7 });
+const dayPlaceholders = Array.from({ length: 42 });
 
 export const CalendarMonthSkeleton = () => (
   <section className="space-y-4" aria-live="polite" aria-busy="true">
@@ -10,11 +10,7 @@ export const CalendarMonthSkeleton = () => (
 
     <div className="grid grid-cols-7 gap-2 text-center text-xs uppercase text-muted-foreground">
       {weekdayPlaceholders.map((_, index) => (
-        <span
-          key={`weekday-placeholder-${index}`}
-          className="h-4 rounded-full bg-muted/70"
-          aria-hidden="true"
-        />
+        <span key={`weekday-placeholder-${index}`} className="h-4 rounded-full bg-muted/70" aria-hidden="true" />
       ))}
     </div>
 
@@ -28,6 +24,6 @@ export const CalendarMonthSkeleton = () => (
       ))}
     </div>
   </section>
-)
+);
 
-CalendarMonthSkeleton.displayName = 'CalendarMonthSkeleton'
+CalendarMonthSkeleton.displayName = "CalendarMonthSkeleton";

@@ -1,26 +1,26 @@
-import type { FC } from 'react'
+import type { FC } from "react";
 
-import type { PlantDetailVm } from '@/components/plants/detail/types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { PlantDetailVm } from "@/components/plants/detail/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { PlantPhoto } from './PlantPhoto'
+import { PlantPhoto } from "./PlantPhoto";
 
-export type PlantIdentityCardProps = {
-  plant: PlantDetailVm['plant']
+export interface PlantIdentityCardProps {
+  plant: PlantDetailVm["plant"];
 }
 
-const dateFormatter = new Intl.DateTimeFormat('pl-PL', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-})
+const dateFormatter = new Intl.DateTimeFormat("pl-PL", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
 
 const formatDate = (value: string | null): string | null => {
-  if (!value) return null
-  const date = new Date(`${value}T00:00:00Z`)
-  if (Number.isNaN(date.getTime())) return value
-  return dateFormatter.format(date)
-}
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return value;
+  return dateFormatter.format(date);
+};
 
 export const PlantIdentityCard: FC<PlantIdentityCardProps> = ({ plant }) => (
   <Card>
@@ -47,20 +47,15 @@ export const PlantIdentityCard: FC<PlantIdentityCardProps> = ({ plant }) => (
         </div>
         <div>
           <dt className="text-sm font-medium text-muted-foreground">Data zakupu</dt>
-          <dd className="text-base text-foreground">
-            {formatDate(plant.purchaseDate) ?? 'Brak informacji'}
-          </dd>
+          <dd className="text-base text-foreground">{formatDate(plant.purchaseDate) ?? "Brak informacji"}</dd>
         </div>
         <div>
           <dt className="text-sm font-medium text-muted-foreground">Opis</dt>
-          <dd className="text-base text-foreground">
-            {plant.description ?? 'Opis nie został dodany'}
-          </dd>
+          <dd className="text-base text-foreground">{plant.description ?? "Opis nie został dodany"}</dd>
         </div>
       </dl>
     </CardContent>
   </Card>
-)
+);
 
-PlantIdentityCard.displayName = 'PlantIdentityCard'
-
+PlantIdentityCard.displayName = "PlantIdentityCard";

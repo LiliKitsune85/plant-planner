@@ -1,24 +1,19 @@
-import { useCallback, useId } from 'react'
-import type { FC } from 'react'
+import { useCallback, useId } from "react";
+import type { FC } from "react";
 
-import type { DeletePlantMutationErrorVm } from '@/components/plants/delete/types'
-import { Button } from '@/components/ui/button'
-import {
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-} from '@/components/ui/modal'
+import type { DeletePlantMutationErrorVm } from "@/components/plants/delete/types";
+import { Button } from "@/components/ui/button";
+import { Modal, ModalBody, ModalFooter, ModalHeader } from "@/components/ui/modal";
 
-export type DeletePlantDialogProps = {
-  open: boolean
-  plantDisplayName: string
-  pending: boolean
-  confirmChecked: boolean
-  error?: DeletePlantMutationErrorVm | null
-  onOpenChange: (open: boolean) => void
-  onConfirm: () => void | Promise<void>
-  onConfirmCheckedChange: (checked: boolean) => void
+export interface DeletePlantDialogProps {
+  open: boolean;
+  plantDisplayName: string;
+  pending: boolean;
+  confirmChecked: boolean;
+  error?: DeletePlantMutationErrorVm | null;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void | Promise<void>;
+  onConfirmCheckedChange: (checked: boolean) => void;
 }
 
 export const DeletePlantDialog: FC<DeletePlantDialogProps> = ({
@@ -31,22 +26,20 @@ export const DeletePlantDialog: FC<DeletePlantDialogProps> = ({
   onConfirm,
   onConfirmCheckedChange,
 }) => {
-  const checkboxId = useId()
+  const checkboxId = useId();
   const handleRequestClose = useCallback(() => {
-    if (pending) return
-    onOpenChange(false)
-  }, [onOpenChange, pending])
+    if (pending) return;
+    onOpenChange(false);
+  }, [onOpenChange, pending]);
 
   const handleConfirm = useCallback(() => {
-    void onConfirm()
-  }, [onConfirm])
+    void onConfirm();
+  }, [onConfirm]);
 
   return (
     <Modal open={open} onClose={handleRequestClose} labelledBy="plant-delete-dialog-title">
       <ModalHeader>
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-destructive">
-          Potwierdzenie operacji
-        </p>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-destructive">Potwierdzenie operacji</p>
         <h2 id="plant-delete-dialog-title" className="text-2xl font-semibold text-foreground">
           Usuń roślinę
         </h2>
@@ -78,9 +71,7 @@ export const DeletePlantDialog: FC<DeletePlantDialogProps> = ({
           >
             <p>{error.message}</p>
             {error.code ? <p className="text-xs text-destructive/80">Kod błędu: {error.code}</p> : null}
-            {error.requestId ? (
-              <p className="text-xs text-destructive/70">ID żądania: {error.requestId}</p>
-            ) : null}
+            {error.requestId ? <p className="text-xs text-destructive/70">ID żądania: {error.requestId}</p> : null}
           </div>
         ) : null}
       </ModalBody>
@@ -88,17 +79,12 @@ export const DeletePlantDialog: FC<DeletePlantDialogProps> = ({
         <Button variant="ghost" onClick={handleRequestClose} disabled={pending}>
           Anuluj
         </Button>
-        <Button
-          variant="destructive"
-          onClick={handleConfirm}
-          disabled={!confirmChecked || pending}
-        >
-          {pending ? 'Usuwanie…' : 'Usuń roślinę'}
+        <Button variant="destructive" onClick={handleConfirm} disabled={!confirmChecked || pending}>
+          {pending ? "Usuwanie…" : "Usuń roślinę"}
         </Button>
       </ModalFooter>
     </Modal>
-  )
-}
+  );
+};
 
-DeletePlantDialog.displayName = 'DeletePlantDialog'
-
+DeletePlantDialog.displayName = "DeletePlantDialog";

@@ -1,7 +1,7 @@
-import type { FC } from 'react'
+import type { FC } from "react";
 
-type PlantWateringPlanHeaderProps = {
-  speciesName?: string
+interface PlantWateringPlanHeaderProps {
+  speciesName?: string;
 }
 
 export const PlantWateringPlanHeader: FC<PlantWateringPlanHeaderProps> = ({ speciesName }) => {
@@ -19,8 +19,7 @@ export const PlantWateringPlanHeader: FC<PlantWateringPlanHeaderProps> = ({ spec
         </p>
       )}
     </header>
-  )
-}
+  );
+};
 
-PlantWateringPlanHeader.displayName = 'PlantWateringPlanHeader'
-
+PlantWateringPlanHeader.displayName = "PlantWateringPlanHeader";

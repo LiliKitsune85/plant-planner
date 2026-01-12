@@ -1,13 +1,13 @@
-import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
-export type AiSuggestionToggleProps = {
-  checked: boolean
-  disabled?: boolean
-  showLimitInfo: boolean
-  limitText: string
-  rateLimit?: { unlockAt?: string } | null
-  onCheckedChange: (checked: boolean) => void
+export interface AiSuggestionToggleProps {
+  checked: boolean;
+  disabled?: boolean;
+  showLimitInfo: boolean;
+  limitText: string;
+  rateLimit?: { unlockAt?: string } | null;
+  onCheckedChange: (checked: boolean) => void;
 }
 
 export const AiSuggestionToggle = ({
@@ -34,7 +34,7 @@ export const AiSuggestionToggle = ({
           checked={checked}
           onCheckedChange={onCheckedChange}
           disabled={disabled}
-          aria-describedby={rateLimit ? 'create-plant-ai-limit' : undefined}
+          aria-describedby={rateLimit ? "create-plant-ai-limit" : undefined}
           data-testid="create-plant-ai-toggle"
         />
       </div>
@@ -45,14 +45,14 @@ export const AiSuggestionToggle = ({
       ) : null}
       {rateLimit ? (
         <p className="mt-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
-          Limit został osiągnięty. Możesz kontynuować dodawanie rośliny bez AI.{' '}
+          Limit został osiągnięty. Możesz kontynuować dodawanie rośliny bez AI.{" "}
           {rateLimit.unlockAt
             ? `Kolejna prośba będzie możliwa po ${rateLimit.unlockAt}.`
-            : 'Wróć za chwilę, aby ponownie włączyć AI.'}
+            : "Wróć za chwilę, aby ponownie włączyć AI."}
         </p>
       ) : null}
     </section>
-  )
-}
+  );
+};
 
-AiSuggestionToggle.displayName = 'AiSuggestionToggle'
+AiSuggestionToggle.displayName = "AiSuggestionToggle";

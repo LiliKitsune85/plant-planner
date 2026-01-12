@@ -1,26 +1,26 @@
-import { Button } from '@/components/ui/button'
-import { PlantsLimitSelect } from './PlantsLimitSelect'
-import { PlantsOrderToggle } from './PlantsOrderToggle'
-import { PlantsSearchInput } from './PlantsSearchInput'
-import { PlantsSortSelect } from './PlantsSortSelect'
-import { PlantsSpeciesInput } from './PlantsSpeciesInput'
+import { Button } from "@/components/ui/button";
+import { PlantsLimitSelect } from "./PlantsLimitSelect";
+import { PlantsOrderToggle } from "./PlantsOrderToggle";
+import { PlantsSearchInput } from "./PlantsSearchInput";
+import { PlantsSortSelect } from "./PlantsSortSelect";
+import { PlantsSpeciesInput } from "./PlantsSpeciesInput";
 
-import type { PlantSortField, SortOrder } from '@/lib/services/plants/types'
+import type { PlantSortField, SortOrder } from "@/lib/services/plants/types";
 
-type PlantsListControlsProps = {
-  searchValue: string
-  speciesValue: string
-  sort: PlantSortField
-  order: SortOrder
-  limit: number
-  pending?: boolean
-  showReset?: boolean
-  onSearchCommit: (value: string) => void
-  onSpeciesCommit: (value: string) => void
-  onSortChange: (value: PlantSortField) => void
-  onOrderChange: (value: SortOrder) => void
-  onLimitChange: (value: number) => void
-  onReset?: () => void
+interface PlantsListControlsProps {
+  searchValue: string;
+  speciesValue: string;
+  sort: PlantSortField;
+  order: SortOrder;
+  limit: number;
+  pending?: boolean;
+  showReset?: boolean;
+  onSearchCommit: (value: string) => void;
+  onSpeciesCommit: (value: string) => void;
+  onSortChange: (value: PlantSortField) => void;
+  onOrderChange: (value: SortOrder) => void;
+  onLimitChange: (value: number) => void;
+  onReset?: () => void;
 }
 
 export const PlantsListControls = ({
@@ -63,7 +63,7 @@ export const PlantsListControls = ({
         <PlantsLimitSelect value={limit} onChange={onLimitChange} disabled={pending} />
       </div>
     </section>
-  )
-}
+  );
+};
 
-PlantsListControls.displayName = 'PlantsListControls'
+PlantsListControls.displayName = "PlantsListControls";

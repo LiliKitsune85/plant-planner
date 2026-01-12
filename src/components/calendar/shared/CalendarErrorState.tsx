@@ -1,43 +1,35 @@
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import type { CalendarMonthErrorVm } from '@/lib/services/calendar/month-view-model'
-import type { CalendarDayErrorVm } from '@/lib/services/calendar/day-view-model'
-import { cn } from '@/lib/utils'
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import type { CalendarMonthErrorVm } from "@/lib/services/calendar/month-view-model";
+import type { CalendarDayErrorVm } from "@/lib/services/calendar/day-view-model";
+import { cn } from "@/lib/utils";
 
-type CalendarErrorVm = CalendarMonthErrorVm | CalendarDayErrorVm
+type CalendarErrorVm = CalendarMonthErrorVm | CalendarDayErrorVm;
 
-type CalendarErrorStateProps = {
-  error: CalendarErrorVm
-  onRetry?: () => void
-  className?: string
-  title?: string
-  validationCtaHref?: string
-  validationCtaLabel?: string
-  loginHref?: string
-  loginCtaLabel?: string
+interface CalendarErrorStateProps {
+  error: CalendarErrorVm;
+  onRetry?: () => void;
+  className?: string;
+  title?: string;
+  validationCtaHref?: string;
+  validationCtaLabel?: string;
+  loginHref?: string;
+  loginCtaLabel?: string;
 }
 
-const shouldShowRetry = (kind: CalendarErrorVm['kind']) =>
-  kind !== 'validation' && kind !== 'unauthenticated'
+const shouldShowRetry = (kind: CalendarErrorVm["kind"]) => kind !== "validation" && kind !== "unauthenticated";
 
 export const CalendarErrorState = ({
   error,
   onRetry,
   className,
-  title = 'Nie udało się wczytać danych',
-  validationCtaHref = '/calendar',
-  validationCtaLabel = 'Przejdź do bieżącego widoku',
-  loginHref = '/auth/login',
-  loginCtaLabel = 'Przejdź do logowania',
+  title = "Nie udało się wczytać danych",
+  validationCtaHref = "/calendar",
+  validationCtaLabel = "Przejdź do bieżącego widoku",
+  loginHref = "/auth/login",
+  loginCtaLabel = "Przejdź do logowania",
 }: CalendarErrorStateProps) => (
-  <Card className={cn('border-destructive/30 bg-destructive/5', className)}>
+  <Card className={cn("border-destructive/30 bg-destructive/5", className)}>
     <CardHeader>
       <CardTitle>{title}</CardTitle>
       <CardDescription>{error.message}</CardDescription>
@@ -47,7 +39,7 @@ export const CalendarErrorState = ({
         <div className="space-y-2 text-sm text-muted-foreground">
           {Object.entries(error.fieldErrors).map(([field, messages]) => (
             <p key={field}>
-              <span className="font-medium">{field}:</span> {messages.join(', ')}
+              <span className="font-medium">{field}:</span> {messages.join(", ")}
             </p>
           ))}
         </div>
@@ -64,18 +56,18 @@ export const CalendarErrorState = ({
           Spróbuj ponownie
         </Button>
       )}
-      {error.kind === 'validation' && validationCtaHref && (
+      {error.kind === "validation" && validationCtaHref && (
         <Button asChild>
           <a href={validationCtaHref}>{validationCtaLabel}</a>
         </Button>
       )}
-      {error.kind === 'unauthenticated' && loginHref && (
+      {error.kind === "unauthenticated" && loginHref && (
         <Button asChild>
           <a href={loginHref}>{loginCtaLabel}</a>
         </Button>
       )}
     </CardFooter>
   </Card>
-)
+);
 
-CalendarErrorState.displayName = 'CalendarErrorState'
+CalendarErrorState.displayName = "CalendarErrorState";

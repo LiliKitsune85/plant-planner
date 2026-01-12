@@ -1,11 +1,11 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
 
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle } from "lucide-react";
 
-type AuthErrorAlertProps = {
-  title?: string
-  description?: ReactNode
-  children?: ReactNode
+interface AuthErrorAlertProps {
+  title?: string;
+  description?: ReactNode;
+  children?: ReactNode;
 }
 
 export const AuthErrorAlert = ({ title, description, children }: AuthErrorAlertProps) => {
@@ -16,12 +16,12 @@ export const AuthErrorAlert = ({ title, description, children }: AuthErrorAlertP
     >
       <AlertCircle className="mt-0.5 size-5 shrink-0" aria-hidden />
       <div className="space-y-1">
-        <p className="font-semibold tracking-tight">{title ?? 'Nie udało się zrealizować żądania'}</p>
+        <p className="font-semibold tracking-tight">{title ?? "Nie udało się zrealizować żądania"}</p>
         {description ? <p className="text-destructive/90">{description}</p> : null}
         {children}
       </div>
     </div>
-  )
-}
+  );
+};
 
-AuthErrorAlert.displayName = 'AuthErrorAlert'
+AuthErrorAlert.displayName = "AuthErrorAlert";

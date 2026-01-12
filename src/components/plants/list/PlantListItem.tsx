@@ -1,15 +1,15 @@
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 
-import { PlantThumbnail } from './PlantThumbnail'
+import { PlantThumbnail } from "./PlantThumbnail";
 
-import type { PlantListItemVm } from '@/lib/services/plants/list-view-model'
+import type { PlantListItemVm } from "@/lib/services/plants/list-view-model";
 
-type PlantListItemProps = {
-  item: PlantListItemVm
+interface PlantListItemProps {
+  item: PlantListItemVm;
 }
 
 export const PlantListItem = ({ item }: PlantListItemProps) => {
-  const editHref = `/plants/${item.id}/edit`
+  const editHref = `/plants/${item.id}/edit`;
 
   return (
     <li>
@@ -21,9 +21,7 @@ export const PlantListItem = ({ item }: PlantListItemProps) => {
           <PlantThumbnail photoPath={item.photoPath ?? null} alt={item.displayName} />
           <div className="flex flex-1 flex-col gap-1">
             <p className="text-base font-semibold text-foreground">{item.displayName}</p>
-            {item.nickname && (
-              <p className="text-sm text-muted-foreground">Pseudonim: {item.nickname}</p>
-            )}
+            {item.nickname && <p className="text-sm text-muted-foreground">Pseudonim: {item.nickname}</p>}
             {item.metaLabel && <p className="text-xs text-muted-foreground">{item.metaLabel}</p>}
           </div>
           <span className="text-lg text-primary transition group-hover:translate-x-1" aria-hidden>
@@ -40,7 +38,7 @@ export const PlantListItem = ({ item }: PlantListItemProps) => {
         </div>
       </article>
     </li>
-  )
-}
+  );
+};
 
-PlantListItem.displayName = 'PlantListItem'
+PlantListItem.displayName = "PlantListItem";

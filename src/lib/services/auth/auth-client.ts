@@ -1,183 +1,177 @@
-import type { MeResponseDto, SignInCommand } from '@/types'
+import type { MeResponseDto, SignInCommand } from "@/types";
 
-type ApiErrorPayload = {
-  code: string
-  message: string
-  details?: unknown
+interface ApiErrorPayload {
+  code: string;
+  message: string;
+  details?: unknown;
 }
 
-type ApiEnvelope<TData> = {
-  data: TData | null
-  error: ApiErrorPayload | null
-  meta?: Record<string, unknown> | null
+interface ApiEnvelope<TData> {
+  data: TData | null;
+  error: ApiErrorPayload | null;
+  meta?: Record<string, unknown> | null;
 }
 
-type FieldErrors = Record<string, string[]>
+type FieldErrors = Record<string, string[]>;
 
 export type AuthApiErrorKind =
-  | 'validation'
-  | 'invalidCredentials'
-  | 'rateLimited'
-  | 'unauthenticated'
-  | 'http'
-  | 'network'
-  | 'parse'
-  | 'unknown'
+  | "validation"
+  | "invalidCredentials"
+  | "rateLimited"
+  | "unauthenticated"
+  | "http"
+  | "network"
+  | "parse"
+  | "unknown";
 
-type AuthApiErrorOptions = {
-  status?: number
-  requestId?: string
-  details?: unknown
-  fieldErrors?: FieldErrors
-  kind?: AuthApiErrorKind
-  cause?: unknown
+interface AuthApiErrorOptions {
+  status?: number;
+  requestId?: string;
+  details?: unknown;
+  fieldErrors?: FieldErrors;
+  kind?: AuthApiErrorKind;
+  cause?: unknown;
 }
 
 export class AuthApiError extends Error {
-  readonly code: string
-  readonly status?: number
-  readonly requestId?: string
-  readonly details?: unknown
-  readonly fieldErrors?: FieldErrors
-  readonly kind: AuthApiErrorKind
+  readonly code: string;
+  readonly status?: number;
+  readonly requestId?: string;
+  readonly details?: unknown;
+  readonly fieldErrors?: FieldErrors;
+  readonly kind: AuthApiErrorKind;
 
   constructor(code: string, message: string, options: AuthApiErrorOptions = {}) {
-    super(message, options.cause ? { cause: options.cause } : undefined)
-    this.code = code
-    this.status = options.status
-    this.requestId = options.requestId
-    this.details = options.details
-    this.fieldErrors = options.fieldErrors
-    this.kind = options.kind ?? 'unknown'
+    super(message, options.cause ? { cause: options.cause } : undefined);
+    this.code = code;
+    this.status = options.status;
+    this.requestId = options.requestId;
+    this.details = options.details;
+    this.fieldErrors = options.fieldErrors;
+    this.kind = options.kind ?? "unknown";
   }
 }
 
-const mapIssuesToFieldErrors = (issues: Array<unknown>): FieldErrors | undefined => {
-  if (!issues.length) return undefined
+const mapIssuesToFieldErrors = (issues: unknown[]): FieldErrors | undefined => {
+  if (!issues.length) return undefined;
   return issues.reduce<FieldErrors>((acc, issue) => {
-    if (!issue || typeof issue !== 'object') return acc
-    const pathValue = (issue as { path?: unknown }).path
-    const messageValue = (issue as { message?: unknown }).message
+    if (!issue || typeof issue !== "object") return acc;
+    const pathValue = (issue as { path?: unknown }).path;
+    const messageValue = (issue as { message?: unknown }).message;
     const path =
       Array.isArray(pathValue) && pathValue.length
-        ? pathValue.join('.')
-        : typeof pathValue === 'string' && pathValue.length
+        ? pathValue.join(".")
+        : typeof pathValue === "string" && pathValue.length
           ? pathValue
-          : 'form'
-    const message =
-      typeof messageValue === 'string' && messageValue.length
-        ? messageValue
-        : 'Niepoprawna wartość.'
+          : "form";
+    const message = typeof messageValue === "string" && messageValue.length ? messageValue : "Niepoprawna wartość.";
     if (acc[path]) {
-      acc[path] = [...acc[path], message]
+      acc[path] = [...acc[path], message];
     } else {
-      acc[path] = [message]
+      acc[path] = [message];
     }
-    return acc
-  }, {})
-}
+    return acc;
+  }, {});
+};
 
 const extractFieldErrors = (details: unknown): FieldErrors | undefined => {
-  if (!details || typeof details !== 'object') return undefined
+  if (!details || typeof details !== "object") return undefined;
 
-  const maybeFieldErrors = (details as { fieldErrors?: unknown }).fieldErrors
-  if (maybeFieldErrors && typeof maybeFieldErrors === 'object') {
-    const entries = Object.entries(maybeFieldErrors as Record<string, unknown>)
+  const maybeFieldErrors = (details as { fieldErrors?: unknown }).fieldErrors;
+  if (maybeFieldErrors && typeof maybeFieldErrors === "object") {
+    const entries = Object.entries(maybeFieldErrors as Record<string, unknown>);
     const normalized = entries.reduce<FieldErrors>((acc, [key, value]) => {
-      if (!Array.isArray(value)) return acc
-      const messages = value.filter((item): item is string => typeof item === 'string' && item.length)
+      if (!Array.isArray(value)) return acc;
+      const messages = value.filter((item): item is string => typeof item === "string" && item.length);
       if (messages.length) {
-        acc[key] = messages
+        acc[key] = messages;
       }
-      return acc
-    }, {})
+      return acc;
+    }, {});
     if (Object.keys(normalized).length) {
-      return normalized
+      return normalized;
     }
   }
 
-  const issues = (details as { issues?: unknown }).issues
+  const issues = (details as { issues?: unknown }).issues;
   if (Array.isArray(issues)) {
-    return mapIssuesToFieldErrors(issues)
+    return mapIssuesToFieldErrors(issues);
   }
 
-  return undefined
-}
+  return undefined;
+};
 
 const detectRequestId = (meta?: Record<string, unknown> | null): string | undefined => {
-  if (!meta) return undefined
-  const value = (meta as { request_id?: unknown }).request_id
-  return typeof value === 'string' ? value : undefined
-}
+  if (!meta) return undefined;
+  const value = (meta as { request_id?: unknown }).request_id;
+  return typeof value === "string" ? value : undefined;
+};
 
 const determineErrorKind = (status?: number, code?: string): AuthApiErrorKind => {
-  if (code === 'VALIDATION_ERROR' || status === 422) return 'validation'
-  if (code === 'INVALID_CREDENTIALS') return 'invalidCredentials'
-  if (code === 'RATE_LIMITED' || status === 429) return 'rateLimited'
-  if (code === 'UNAUTHENTICATED' || status === 401) return 'unauthenticated'
-  if (status && status >= 400) return 'http'
-  return 'unknown'
-}
+  if (code === "VALIDATION_ERROR" || status === 422) return "validation";
+  if (code === "INVALID_CREDENTIALS") return "invalidCredentials";
+  if (code === "RATE_LIMITED" || status === 429) return "rateLimited";
+  if (code === "UNAUTHENTICATED" || status === 401) return "unauthenticated";
+  if (status && status >= 400) return "http";
+  return "unknown";
+};
 
-type RequestAuthApiResult<TData> = {
-  response: Response
-  envelope: ApiEnvelope<TData>
+interface RequestAuthApiResult<TData> {
+  response: Response;
+  envelope: ApiEnvelope<TData>;
 }
 
 const requestAuthApi = async <TData>(
   input: RequestInfo | URL,
-  init: RequestInit = {},
+  init: RequestInit = {}
 ): Promise<RequestAuthApiResult<TData>> => {
-  let response: Response
+  let response: Response;
   try {
-    response = await fetch(input, init)
+    response = await fetch(input, init);
   } catch (error) {
-    throw new AuthApiError('NETWORK_ERROR', 'Nie udało się połączyć z serwerem.', {
-      kind: 'network',
+    throw new AuthApiError("NETWORK_ERROR", "Nie udało się połączyć z serwerem.", {
+      kind: "network",
       cause: error,
-    })
+    });
   }
 
-  let envelope: ApiEnvelope<TData>
+  let envelope: ApiEnvelope<TData>;
   try {
-    envelope = (await response.json()) as ApiEnvelope<TData>
+    envelope = (await response.json()) as ApiEnvelope<TData>;
   } catch (error) {
-    throw new AuthApiError('PARSE_ERROR', 'Nie udało się przetworzyć odpowiedzi serwera.', {
+    throw new AuthApiError("PARSE_ERROR", "Nie udało się przetworzyć odpowiedzi serwera.", {
       status: response.status,
-      kind: 'parse',
+      kind: "parse",
       cause: error,
-    })
+    });
   }
 
-  return { response, envelope }
+  return { response, envelope };
+};
+
+interface SignInOptions {
+  signal?: AbortSignal;
 }
 
-type SignInOptions = {
-  signal?: AbortSignal
-}
-
-export const signIn = async (
-  credentials: SignInCommand,
-  options: SignInOptions = {},
-): Promise<MeResponseDto> => {
-  const { response, envelope } = await requestAuthApi<MeResponseDto>('/api/auth/sign-in', {
-    method: 'POST',
+export const signIn = async (credentials: SignInCommand, options: SignInOptions = {}): Promise<MeResponseDto> => {
+  const { response, envelope } = await requestAuthApi<MeResponseDto>("/api/auth/sign-in", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(credentials),
     signal: options.signal,
-  })
+  });
 
-  const requestId = detectRequestId(envelope.meta ?? null)
+  const requestId = detectRequestId(envelope.meta ?? null);
 
   if (!response.ok || envelope.error || !envelope.data) {
     const errorPayload = envelope.error ?? {
-      code: 'HTTP_ERROR',
+      code: "HTTP_ERROR",
       message: `Żądanie nie powiodło się (status ${response.status}).`,
-    }
+    };
 
-    const fieldErrors = extractFieldErrors(errorPayload.details)
+    const fieldErrors = extractFieldErrors(errorPayload.details);
 
     throw new AuthApiError(errorPayload.code, errorPayload.message, {
       status: response.status,
@@ -185,9 +179,8 @@ export const signIn = async (
       details: errorPayload.details,
       fieldErrors,
       kind: determineErrorKind(response.status, errorPayload.code),
-    })
+    });
   }
 
-  return envelope.data
-}
-
+  return envelope.data;
+};

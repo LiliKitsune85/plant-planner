@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "../../../db/supabase.client";
+import { logger } from "@/lib/logger";
 import type { WateringPlanHistoryItemDto } from "../../../types";
 import { HttpError } from "../../http/errors";
 import { encodeWateringPlanHistoryCursor } from "./cursor";
@@ -74,7 +75,7 @@ const ensurePlantOwnership = async (supabase: SupabaseClient, userId: string, pl
     .maybeSingle();
 
   if (error) {
-    console.error("listWateringPlans: plant lookup failed", { error, userId, plantId });
+    logger.error("listWateringPlans: plant lookup failed", { error, userId, plantId });
     throw new HttpError(500, "Failed to verify plant ownership", "PLANT_LOOKUP_FAILED");
   }
 
@@ -112,7 +113,7 @@ export const listWateringPlans = async (
   const { data, error } = await request.limit(limit + 1);
 
   if (error || !data) {
-    console.error("listWateringPlans query failed", {
+    logger.error("listWateringPlans query failed", {
       error,
       userId,
       plantId,

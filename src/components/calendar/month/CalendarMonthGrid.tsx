@@ -1,18 +1,15 @@
-import { CalendarMonthDayTile } from './CalendarMonthDayTile'
+import { CalendarMonthDayTile } from "./CalendarMonthDayTile";
 
-import type { CalendarMonthGridVm } from '@/lib/services/calendar/month-view-model'
-import { cn } from '@/lib/utils'
+import type { CalendarMonthGridVm } from "@/lib/services/calendar/month-view-model";
+import { cn } from "@/lib/utils";
 
-type CalendarMonthGridProps = {
-  grid: CalendarMonthGridVm
-  className?: string
+interface CalendarMonthGridProps {
+  grid: CalendarMonthGridVm;
+  className?: string;
 }
 
 export const CalendarMonthGrid = ({ grid, className }: CalendarMonthGridProps) => (
-  <section
-    className={cn('flex flex-col gap-3', className)}
-    aria-label={`Siatka dni dla ${grid.month}`}
-  >
+  <section className={cn("flex flex-col gap-3", className)} aria-label={`Siatka dni dla ${grid.month}`}>
     <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">
       {grid.weekdayLabels.map((label, index) => (
         <span key={`${label}-${index}`}>{label}</span>
@@ -29,6 +26,6 @@ export const CalendarMonthGrid = ({ grid, className }: CalendarMonthGridProps) =
       ))}
     </div>
   </section>
-)
+);
 
-CalendarMonthGrid.displayName = 'CalendarMonthGrid'
+CalendarMonthGrid.displayName = "CalendarMonthGrid";

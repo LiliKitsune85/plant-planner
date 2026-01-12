@@ -1,29 +1,18 @@
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-type PlantsEmptyStateProps = {
-  query?: string
-  onClearFilters?: () => void
-  ctaHref?: string
+interface PlantsEmptyStateProps {
+  query?: string;
+  onClearFilters?: () => void;
+  ctaHref?: string;
 }
 
-export const PlantsEmptyState = ({
-  query,
-  onClearFilters,
-  ctaHref = '/plants/new',
-}: PlantsEmptyStateProps) => {
-  const hasQuery = Boolean(query && query.length > 0)
-  const title = hasQuery ? `Brak wyników dla „${query}”` : 'Nie dodałeś jeszcze żadnej rośliny'
+export const PlantsEmptyState = ({ query, onClearFilters, ctaHref = "/plants/new" }: PlantsEmptyStateProps) => {
+  const hasQuery = Boolean(query && query.length > 0);
+  const title = hasQuery ? `Brak wyników dla „${query}”` : "Nie dodałeś jeszcze żadnej rośliny";
   const description = hasQuery
-    ? 'Spróbuj zmienić filtr wyszukiwania lub wyczyść zapytanie, aby wrócić do pełnej listy.'
-    : 'Dodaj pierwszą roślinę i zacznij planować jej pielęgnację.'
+    ? "Spróbuj zmienić filtr wyszukiwania lub wyczyść zapytanie, aby wrócić do pełnej listy."
+    : "Dodaj pierwszą roślinę i zacznij planować jej pielęgnację.";
 
   return (
     <Card className="mx-auto max-w-2xl text-center">
@@ -45,7 +34,7 @@ export const PlantsEmptyState = ({
         </Button>
       </CardFooter>
     </Card>
-  )
-}
+  );
+};
 
-PlantsEmptyState.displayName = 'PlantsEmptyState'
+PlantsEmptyState.displayName = "PlantsEmptyState";

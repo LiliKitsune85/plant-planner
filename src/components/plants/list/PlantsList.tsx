@@ -1,19 +1,19 @@
-import { PlantListItem } from './PlantListItem'
+import { PlantListItem } from "./PlantListItem";
 
-import type { PlantListItemVm } from '@/lib/services/plants/list-view-model'
+import type { PlantListItemVm } from "@/lib/services/plants/list-view-model";
 
-type PlantsListProps = {
-  items: PlantListItemVm[]
+interface PlantsListProps {
+  items: PlantListItemVm[];
 }
 
 export const PlantsList = ({ items }: PlantsListProps) => {
   return (
-    <ul role="list" className="space-y-3">
+    <ul className="space-y-3">
       {items.map((item) => (
         <PlantListItem key={item.id} item={item} />
       ))}
     </ul>
-  )
-}
+  );
+};
 
-PlantsList.displayName = 'PlantsList'
+PlantsList.displayName = "PlantsList";

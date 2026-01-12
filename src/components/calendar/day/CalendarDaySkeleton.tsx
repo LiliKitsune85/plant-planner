@@ -20,6 +20,6 @@ export const CalendarDaySkeleton = () => (
       ))}
     </div>
   </section>
-)
+);
 
-CalendarDaySkeleton.displayName = 'CalendarDaySkeleton'
+CalendarDaySkeleton.displayName = "CalendarDaySkeleton";

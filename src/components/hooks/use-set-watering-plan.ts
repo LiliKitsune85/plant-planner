@@ -1,68 +1,61 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState } from "react";
+import { logger } from "@/lib/logger";
 
-import type { SetPlanErrorVm } from '@/components/plants/watering-plan/types'
-import {
-  buildSetPlanErrorVm,
-  buildUnknownSetPlanError,
-} from '@/components/plants/watering-plan/view-model'
-import {
-  setWateringPlan,
-  SetWateringPlanApiError,
-} from '@/lib/services/watering-plans/set-plan-client'
-import type { SetWateringPlanCommand, SetWateringPlanResultDto } from '@/types'
+import type { SetPlanErrorVm } from "@/components/plants/watering-plan/types";
+import { buildSetPlanErrorVm, buildUnknownSetPlanError } from "@/components/plants/watering-plan/view-model";
+import { setWateringPlan, SetWateringPlanApiError } from "@/lib/services/watering-plans/set-plan-client";
+import type { SetWateringPlanCommand, SetWateringPlanResultDto } from "@/types";
 
-type UseSetWateringPlanParams = {
-  plantId: string
+interface UseSetWateringPlanParams {
+  plantId: string;
 }
 
-type UseSetWateringPlanResult = {
-  isSaving: boolean
-  error: SetPlanErrorVm | null
-  lastResult?: SetWateringPlanResultDto
-  requestId?: string
-  save: (command: SetWateringPlanCommand) => Promise<SetWateringPlanResultDto | null>
-  clearError: () => void
+interface UseSetWateringPlanResult {
+  isSaving: boolean;
+  error: SetPlanErrorVm | null;
+  lastResult?: SetWateringPlanResultDto;
+  requestId?: string;
+  save: (command: SetWateringPlanCommand) => Promise<SetWateringPlanResultDto | null>;
+  clearError: () => void;
 }
 
-export const useSetWateringPlan = ({
-  plantId,
-}: UseSetWateringPlanParams): UseSetWateringPlanResult => {
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<SetPlanErrorVm | null>(null)
-  const [lastResult, setLastResult] = useState<SetWateringPlanResultDto | undefined>(undefined)
-  const [requestId, setRequestId] = useState<string | undefined>(undefined)
+export const useSetWateringPlan = ({ plantId }: UseSetWateringPlanParams): UseSetWateringPlanResult => {
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<SetPlanErrorVm | null>(null);
+  const [lastResult, setLastResult] = useState<SetWateringPlanResultDto | undefined>(undefined);
+  const [requestId, setRequestId] = useState<string | undefined>(undefined);
 
   const clearError = useCallback(() => {
-    setError(null)
-  }, [])
+    setError(null);
+  }, []);
 
   const save = useCallback(
     async (command: SetWateringPlanCommand) => {
-      setIsSaving(true)
-      setError(null)
-      setRequestId(undefined)
+      setIsSaving(true);
+      setError(null);
+      setRequestId(undefined);
 
       try {
-        const { data, requestId: reqId } = await setWateringPlan(plantId, command)
-        setLastResult(data)
-        setRequestId(reqId)
-        return data
+        const { data, requestId: reqId } = await setWateringPlan(plantId, command);
+        setLastResult(data);
+        setRequestId(reqId);
+        return data;
       } catch (err) {
         if (err instanceof SetWateringPlanApiError) {
-          const mapped = buildSetPlanErrorVm(err)
-          setError(mapped)
-          setRequestId(err.requestId)
+          const mapped = buildSetPlanErrorVm(err);
+          setError(mapped);
+          setRequestId(err.requestId);
         } else {
-          console.error('Unexpected error while saving watering plan', err)
-          setError(buildUnknownSetPlanError())
+          logger.error("Unexpected error while saving watering plan", err);
+          setError(buildUnknownSetPlanError());
         }
-        return null
+        return null;
       } finally {
-        setIsSaving(false)
+        setIsSaving(false);
       }
     },
-    [plantId],
-  )
+    [plantId]
+  );
 
   return {
     isSaving,
@@ -71,8 +64,7 @@ export const useSetWateringPlan = ({
     requestId,
     save,
     clearError,
-  }
-}
+  };
+};
 
-useSetWateringPlan.displayName = 'useSetWateringPlan'
-
+useSetWateringPlan.displayName = "useSetWateringPlan";

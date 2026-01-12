@@ -1,43 +1,36 @@
-import { useId } from 'react'
+import { useId } from "react";
 
-import { Button } from '@/components/ui/button'
-import { Modal, ModalBody, ModalFooter, ModalHeader } from '@/components/ui/modal'
-import type { CalendarDayTaskVm } from '@/lib/services/calendar/day-view-model'
+import { Button } from "@/components/ui/button";
+import { Modal, ModalBody, ModalFooter, ModalHeader } from "@/components/ui/modal";
+import type { CalendarDayTaskVm } from "@/lib/services/calendar/day-view-model";
 
-type ConfirmDeleteDialogProps = {
-  open: boolean
-  task: CalendarDayTaskVm
-  pending?: boolean
-  onOpenChange: (open: boolean) => void
-  onConfirm: (taskId: string) => Promise<void> | void
+interface ConfirmDeleteDialogProps {
+  open: boolean;
+  task: CalendarDayTaskVm;
+  pending?: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: (taskId: string) => Promise<void> | void;
 }
 
 const getDialogCopy = (task: CalendarDayTaskVm) => {
   if (task.isAdhoc) {
     return {
-      title: 'Usuń wpis ad hoc',
-      description: 'Czy na pewno chcesz usunąć ten wpis? Operacja jest nieodwracalna.',
-      confirmLabel: 'Usuń wpis',
-    }
+      title: "Usuń wpis ad hoc",
+      description: "Czy na pewno chcesz usunąć ten wpis? Operacja jest nieodwracalna.",
+      confirmLabel: "Usuń wpis",
+    };
   }
 
   return {
-    title: 'Cofnij ukończone zadanie',
-    description:
-      'Usunięcie wpisu przywróci zaplanowane zadanie do statusu "Do wykonania" oraz usunie notatkę.',
-    confirmLabel: 'Cofnij oznaczenie',
-  }
-}
+    title: "Cofnij ukończone zadanie",
+    description: 'Usunięcie wpisu przywróci zaplanowane zadanie do statusu "Do wykonania" oraz usunie notatkę.',
+    confirmLabel: "Cofnij oznaczenie",
+  };
+};
 
-export const ConfirmDeleteDialog = ({
-  open,
-  task,
-  pending,
-  onOpenChange,
-  onConfirm,
-}: ConfirmDeleteDialogProps) => {
-  const titleId = useId()
-  const copy = getDialogCopy(task)
+export const ConfirmDeleteDialog = ({ open, task, pending, onOpenChange, onConfirm }: ConfirmDeleteDialogProps) => {
+  const titleId = useId();
+  const copy = getDialogCopy(task);
 
   return (
     <Modal open={open} onClose={() => onOpenChange(false)} labelledBy={titleId}>
@@ -54,9 +47,7 @@ export const ConfirmDeleteDialog = ({
       <ModalBody>
         <div className="rounded-lg border border-border bg-muted/20 p-4">
           <p className="text-sm font-semibold text-foreground">{task.plantDisplayName}</p>
-          {task.note && (
-            <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{task.note}</p>
-          )}
+          {task.note && <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{task.note}</p>}
         </div>
       </ModalBody>
 
@@ -66,7 +57,7 @@ export const ConfirmDeleteDialog = ({
         </Button>
         <Button
           type="button"
-          variant={task.isAdhoc ? 'destructive' : 'default'}
+          variant={task.isAdhoc ? "destructive" : "default"}
           onClick={() => onConfirm(task.id)}
           disabled={pending}
         >
@@ -74,7 +65,7 @@ export const ConfirmDeleteDialog = ({
         </Button>
       </ModalFooter>
     </Modal>
-  )
-}
+  );
+};
 
-ConfirmDeleteDialog.displayName = 'ConfirmDeleteDialog'
+ConfirmDeleteDialog.displayName = "ConfirmDeleteDialog";

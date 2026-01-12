@@ -1,40 +1,33 @@
-import type { FC } from 'react'
+import type { FC } from "react";
 
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import type { AiSuggestionErrorVm } from '@/components/plants/watering-plan/types'
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import type { AiSuggestionErrorVm } from "@/components/plants/watering-plan/types";
 
-type AiErrorStateProps = {
-  error: AiSuggestionErrorVm
-  isRetrying: boolean
-  onRetry: () => void
-  onManual: () => void
+interface AiErrorStateProps {
+  error: AiSuggestionErrorVm;
+  isRetrying: boolean;
+  onRetry: () => void;
+  onManual: () => void;
 }
 
-const buildTitle = (status: AiSuggestionErrorVm['status']) => {
+const buildTitle = (status: AiSuggestionErrorVm["status"]) => {
   switch (status) {
-    case 'timeout':
-      return 'AI nie odpowiedziało na czas'
-    case 'provider_error':
-      return 'Wystąpił błąd dostawcy AI'
-    case 'unauthenticated':
-      return 'Sesja wygasła'
-    case 'not_found':
-      return 'Nie znaleziono rośliny'
+    case "timeout":
+      return "AI nie odpowiedziało na czas";
+    case "provider_error":
+      return "Wystąpił błąd dostawcy AI";
+    case "unauthenticated":
+      return "Sesja wygasła";
+    case "not_found":
+      return "Nie znaleziono rośliny";
     default:
-      return 'Nie udało się pobrać sugestii AI'
+      return "Nie udało się pobrać sugestii AI";
   }
-}
+};
 
 export const AiErrorState: FC<AiErrorStateProps> = ({ error, isRetrying, onRetry, onManual }) => {
-  const title = buildTitle(error.status)
+  const title = buildTitle(error.status);
   return (
     <Card className="border-destructive/40 bg-destructive/5">
       <CardHeader>
@@ -58,8 +51,7 @@ export const AiErrorState: FC<AiErrorStateProps> = ({ error, isRetrying, onRetry
         </Button>
       </CardFooter>
     </Card>
-  )
-}
+  );
+};
 
-AiErrorState.displayName = 'AiErrorState'
-
+AiErrorState.displayName = "AiErrorState";

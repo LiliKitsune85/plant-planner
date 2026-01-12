@@ -1,22 +1,22 @@
 /// <reference types="astro/client" />
 /// <reference types="vitest" />
 
-import type { SupabaseClient } from './db/supabase.client.ts'
-import type { User } from '@supabase/supabase-js'
+import type { SupabaseClient } from "./db/supabase.client.ts";
+import type { User } from "@supabase/supabase-js";
 
 declare global {
   namespace App {
     interface Locals {
-      supabase: SupabaseClient
-      user: User | null
-      profileTimezone?: string | null
+      supabase: SupabaseClient;
+      user: User | null;
+      profileTimezone?: string | null;
     }
   }
 
   interface Window {
     __PLANT_PLANNER_PROFILE__?: {
-      timezone?: string | null
-    }
+      timezone?: string | null;
+    };
   }
 }
 

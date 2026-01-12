@@ -1,41 +1,34 @@
-import { useEffect, useId, useRef } from 'react'
-import type { FC } from 'react'
+import { useEffect, useId, useRef } from "react";
+import type { FC } from "react";
 
-import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import type { WateringPlanMutationError } from './types'
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import type { WateringPlanMutationError } from "./types";
 
-export type WateringPlanEditorErrorBannerProps = {
-  error: WateringPlanMutationError
-  pending: boolean
-  loginHref?: string
-  onRetry?: () => void
+export interface WateringPlanEditorErrorBannerProps {
+  error: WateringPlanMutationError;
+  pending: boolean;
+  loginHref?: string;
+  onRetry?: () => void;
 }
 
-const buildTitleByKind = (kind: WateringPlanMutationError['kind']): string => {
+const buildTitleByKind = (kind: WateringPlanMutationError["kind"]): string => {
   switch (kind) {
-    case 'unauthenticated':
-      return 'Sesja wygasła'
-    case 'notFound':
-      return 'Nie znaleziono rośliny'
-    case 'conflict':
-      return 'Plan został zmieniony równolegle'
-    case 'network':
-      return 'Brak połączenia z serwerem'
-    case 'http':
-    case 'parse':
-      return 'Błąd serwera'
+    case "unauthenticated":
+      return "Sesja wygasła";
+    case "notFound":
+      return "Nie znaleziono rośliny";
+    case "conflict":
+      return "Plan został zmieniony równolegle";
+    case "network":
+      return "Brak połączenia z serwerem";
+    case "http":
+    case "parse":
+      return "Błąd serwera";
     default:
-      return 'Nie udało się zapisać planu'
+      return "Nie udało się zapisać planu";
   }
-}
+};
 
 export const WateringPlanEditorErrorBanner: FC<WateringPlanEditorErrorBannerProps> = ({
   error,
@@ -43,13 +36,13 @@ export const WateringPlanEditorErrorBanner: FC<WateringPlanEditorErrorBannerProp
   loginHref,
   onRetry,
 }) => {
-  const cardRef = useRef<HTMLDivElement>(null)
-  const titleId = useId()
-  const descriptionId = useId()
+  const cardRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const descriptionId = useId();
 
   useEffect(() => {
-    cardRef.current?.focus()
-  }, [error])
+    cardRef.current?.focus();
+  }, [error]);
 
   return (
     <Card
@@ -63,10 +56,7 @@ export const WateringPlanEditorErrorBanner: FC<WateringPlanEditorErrorBannerProp
     >
       <CardHeader>
         <CardTitle id={titleId}>{buildTitleByKind(error.kind)}</CardTitle>
-        <CardDescription
-          id={descriptionId}
-          className="text-base text-destructive-foreground/90"
-        >
+        <CardDescription id={descriptionId} className="text-base text-destructive-foreground/90">
           {error.message}
         </CardDescription>
       </CardHeader>
@@ -76,7 +66,7 @@ export const WateringPlanEditorErrorBanner: FC<WateringPlanEditorErrorBannerProp
             ID żądania: <span className="font-mono text-[11px]">{error.requestId}</span>
           </p>
         ) : null}
-        {error.details && error.kind === 'http' ? (
+        {error.details && error.kind === "http" ? (
           <pre className="max-h-32 overflow-auto rounded-lg bg-background/40 p-3 text-xs">
             {JSON.stringify(error.details, null, 2)}
           </pre>
@@ -93,15 +83,14 @@ export const WateringPlanEditorErrorBanner: FC<WateringPlanEditorErrorBannerProp
             <a href={loginHref}>Przejdź do logowania</a>
           </Button>
         ) : null}
-        {error.kind === 'notFound' ? (
+        {error.kind === "notFound" ? (
           <Button type="button" asChild variant="ghost" disabled={pending}>
             <a href="/plants">Lista roślin</a>
           </Button>
         ) : null}
       </CardFooter>
     </Card>
-  )
-}
+  );
+};
 
-WateringPlanEditorErrorBanner.displayName = 'WateringPlanEditorErrorBanner'
-
+WateringPlanEditorErrorBanner.displayName = "WateringPlanEditorErrorBanner";

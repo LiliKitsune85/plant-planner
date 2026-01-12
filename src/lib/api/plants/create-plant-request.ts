@@ -1,19 +1,19 @@
-import { z } from 'zod'
+import { z } from "zod";
 
-import type { CreatePlantCommand } from '../../../types'
-import { HttpError } from '../../http/errors'
+import type { CreatePlantCommand } from "../../../types";
+import { HttpError } from "../../http/errors";
 
 const isValidIsoDate = (value: string): boolean => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
-  const parsed = new Date(`${value}T00:00:00Z`)
-  if (Number.isNaN(parsed.getTime())) return false
-  return parsed.toISOString().slice(0, 10) === value
-}
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  return parsed.toISOString().slice(0, 10) === value;
+};
 
 const isoDateStringSchema = z
   .string()
   .trim()
-  .refine(isValidIsoDate, { message: 'Invalid ISO date (expected YYYY-MM-DD)' })
+  .refine(isValidIsoDate, { message: "Invalid ISO date (expected YYYY-MM-DD)" });
 
 const photoPathSchema = z
   .string()
@@ -21,29 +21,29 @@ const photoPathSchema = z
   .min(1)
   .max(500)
   .refine((value) => !/^https?:\/\//i.test(value), {
-    message: 'photo_path must be a storage path, not a URL',
+    message: "photo_path must be a storage path, not a URL",
   })
-  .refine((value) => !value.startsWith('/'), {
-    message: 'photo_path must be a relative path',
+  .refine((value) => !value.startsWith("/"), {
+    message: "photo_path must be a relative path",
   })
-  .refine((value) => !value.includes('..'), {
+  .refine((value) => !value.includes(".."), {
     message: 'photo_path must not contain ".."',
   })
-  .refine((value) => !value.includes('\\'), {
-    message: 'photo_path must not contain backslashes',
+  .refine((value) => !value.includes("\\"), {
+    message: "photo_path must not contain backslashes",
   })
-  .refine((value) => !value.includes('?') && !value.includes('#'), {
-    message: 'photo_path must not contain query or fragment characters',
-  })
+  .refine((value) => !value.includes("?") && !value.includes("#"), {
+    message: "photo_path must not contain query or fragment characters",
+  });
 
 const nullableTrimmedString = (min: number, max: number) =>
   z
     .union([z.string().trim().min(min).max(max), z.null()])
     .optional()
     .transform((value) => {
-      if (value === undefined || value === null) return null
-      return value.length === 0 ? null : value
-    })
+      if (value === undefined || value === null) return null;
+      return value.length === 0 ? null : value;
+    });
 
 const createPlantBodySchema = z
   .object({
@@ -53,8 +53,8 @@ const createPlantBodySchema = z
       .union([z.string().trim().max(10_000), z.null()])
       .optional()
       .transform((value) => {
-        if (value === undefined || value === null) return null
-        return value.length === 0 ? null : value
+        if (value === undefined || value === null) return null;
+        return value.length === 0 ? null : value;
       }),
     purchase_date: z
       .union([isoDateStringSchema, z.null()])
@@ -66,14 +66,13 @@ const createPlantBodySchema = z
       .transform((value) => value ?? null),
     generate_watering_suggestion: z.boolean().optional().default(false),
   })
-  .strict()
+  .strict();
 
 export const parseCreatePlantRequest = (body: unknown): CreatePlantCommand => {
-  const parsed = createPlantBodySchema.safeParse(body)
+  const parsed = createPlantBodySchema.safeParse(body);
   if (!parsed.success) {
-    throw new HttpError(400, 'Invalid request body', 'VALIDATION_ERROR')
+    throw new HttpError(400, "Invalid request body", "VALIDATION_ERROR");
   }
 
-  return parsed.data
-}
-
+  return parsed.data;
+};

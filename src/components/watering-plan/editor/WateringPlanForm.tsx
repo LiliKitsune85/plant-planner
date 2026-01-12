@@ -1,50 +1,50 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import type { FC, FormEvent, RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { FC, FormEvent, RefObject } from "react";
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { cn } from '@/lib/utils'
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import type {
   WateringPlanAdvancedState,
   WateringPlanFormErrors,
   WateringPlanFormState,
   WateringPlanStartFromUi,
-} from './types'
+} from "./types";
 
-export type WateringPlanFormProps = {
-  value: WateringPlanFormState
-  errors: WateringPlanFormErrors | null
-  pending: boolean
-  canSubmit: boolean
-  onChangeIntervalDays: (next: number | '') => void
-  onChangeStartFrom: (next: WateringPlanStartFromUi) => void
-  onChangeCustomStartOn: (next: string | null) => void
-  onChangeAdvanced: (patch: Partial<WateringPlanAdvancedState>) => void
-  onSubmit: () => void
-  onCancel: () => void
+export interface WateringPlanFormProps {
+  value: WateringPlanFormState;
+  errors: WateringPlanFormErrors | null;
+  pending: boolean;
+  canSubmit: boolean;
+  onChangeIntervalDays: (next: number | "") => void;
+  onChangeStartFrom: (next: WateringPlanStartFromUi) => void;
+  onChangeCustomStartOn: (next: string | null) => void;
+  onChangeAdvanced: (patch: Partial<WateringPlanAdvancedState>) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
 }
 
-const parseNumericInput = (raw: string): number | '' => {
-  if (raw === '') return ''
-  const parsed = Number.parseInt(raw, 10)
-  return Number.isNaN(parsed) ? '' : parsed
-}
+const parseNumericInput = (raw: string): number | "" => {
+  if (raw === "") return "";
+  const parsed = Number.parseInt(raw, 10);
+  return Number.isNaN(parsed) ? "" : parsed;
+};
 
 const InlineError = ({ id, message }: { id: string; message?: string }) => {
-  if (!message) return null
+  if (!message) return null;
   return (
     <p id={id} className="text-sm text-destructive">
       {message}
     </p>
-  )
-}
+  );
+};
 
-type IntervalDaysFieldProps = {
-  value: number | ''
-  error?: string
-  onChange: (next: number | '') => void
-  inputRef: RefObject<HTMLInputElement>
+interface IntervalDaysFieldProps {
+  value: number | "";
+  error?: string;
+  onChange: (next: number | "") => void;
+  inputRef: RefObject<HTMLInputElement>;
 }
 
 const IntervalDaysField: FC<IntervalDaysFieldProps> = ({ value, error, onChange, inputRef }) => (
@@ -59,25 +59,25 @@ const IntervalDaysField: FC<IntervalDaysFieldProps> = ({ value, error, onChange,
       step={1}
       inputMode="numeric"
       aria-invalid={Boolean(error)}
-      aria-describedby={error ? 'interval_days-error' : undefined}
-      value={value === '' ? '' : String(value)}
+      aria-describedby={error ? "interval_days-error" : undefined}
+      value={value === "" ? "" : String(value)}
       onChange={(event) => onChange(parseNumericInput(event.target.value))}
     />
     <p className="text-xs text-muted-foreground">Określ co ile dni należy zaplanować podlewanie.</p>
     <InlineError id="interval_days-error" message={error} />
   </div>
-)
+);
 
-type StartFromFieldsetProps = {
-  startFrom: WateringPlanStartFromUi
-  customStartOn: string | null
-  error?: string
-  customDateError?: string
-  pending: boolean
-  onChangeStartFrom: (next: WateringPlanStartFromUi) => void
-  onChangeCustomStartOn: (next: string | null) => void
-  radioRef: RefObject<HTMLInputElement>
-  customDateRef: RefObject<HTMLInputElement>
+interface StartFromFieldsetProps {
+  startFrom: WateringPlanStartFromUi;
+  customStartOn: string | null;
+  error?: string;
+  customDateError?: string;
+  pending: boolean;
+  onChangeStartFrom: (next: WateringPlanStartFromUi) => void;
+  onChangeCustomStartOn: (next: string | null) => void;
+  radioRef: RefObject<HTMLInputElement>;
+  customDateRef: RefObject<HTMLInputElement>;
 }
 
 const StartFromFieldset: FC<StartFromFieldsetProps> = ({
@@ -91,22 +91,22 @@ const StartFromFieldset: FC<StartFromFieldsetProps> = ({
   radioRef,
   customDateRef,
 }) => {
-  const startOptions: Array<{
-    value: WateringPlanStartFromUi
-    title: string
-    description: string
-  }> = [
+  const startOptions: {
+    value: WateringPlanStartFromUi;
+    title: string;
+    description: string;
+  }[] = [
     {
-      value: 'today',
-      title: 'Od dziś',
-      description: 'Pierwsze zadania zostaną wygenerowane od bieżącego dnia.',
+      value: "today",
+      title: "Od dziś",
+      description: "Pierwsze zadania zostaną wygenerowane od bieżącego dnia.",
     },
     {
-      value: 'custom_date',
-      title: 'Niestandardowa data',
-      description: 'Samodzielnie wskaż, kiedy plan ma wejść w życie.',
+      value: "custom_date",
+      title: "Niestandardowa data",
+      description: "Samodzielnie wskaż, kiedy plan ma wejść w życie.",
     },
-  ]
+  ];
 
   return (
     <fieldset className="space-y-3">
@@ -116,9 +116,9 @@ const StartFromFieldset: FC<StartFromFieldsetProps> = ({
           <label
             key={option.value}
             className={cn(
-              'cursor-pointer rounded-2xl border p-4 transition focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/40',
-              startFrom === option.value ? 'border-ring bg-background' : 'border-border bg-card',
-              pending ? 'opacity-70' : '',
+              "cursor-pointer rounded-2xl border p-4 transition focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/40",
+              startFrom === option.value ? "border-ring bg-background" : "border-border bg-card",
+              pending ? "opacity-70" : ""
             )}
           >
             <span className="flex items-center gap-2 text-base font-semibold">
@@ -127,10 +127,9 @@ const StartFromFieldset: FC<StartFromFieldsetProps> = ({
                 name="start_from"
                 value={option.value}
                 checked={startFrom === option.value}
-                  onChange={() => onChangeStartFrom(option.value)}
-                  aria-invalid={option.value === startFrom && Boolean(error)}
-                  aria-describedby={error ? 'start_from-error' : undefined}
-                  ref={option.value === 'today' ? radioRef : undefined}
+                onChange={() => onChangeStartFrom(option.value)}
+                aria-describedby={error ? "start_from-error" : undefined}
+                ref={option.value === "today" ? radioRef : undefined}
               />
               {option.title}
             </span>
@@ -140,7 +139,7 @@ const StartFromFieldset: FC<StartFromFieldsetProps> = ({
       </div>
       <InlineError id="start_from-error" message={error} />
 
-      {startFrom === 'custom_date' ? (
+      {startFrom === "custom_date" ? (
         <div className="space-y-2">
           <Label htmlFor="custom_start_on">Data rozpoczęcia</Label>
           <Input
@@ -148,33 +147,33 @@ const StartFromFieldset: FC<StartFromFieldsetProps> = ({
             id="custom_start_on"
             type="date"
             aria-invalid={Boolean(customDateError)}
-            aria-describedby={customDateError ? 'custom_start_on-error' : undefined}
-            value={customStartOn ?? ''}
+            aria-describedby={customDateError ? "custom_start_on-error" : undefined}
+            value={customStartOn ?? ""}
             onChange={(event) => {
-              const next = event.target.value
-              onChangeCustomStartOn(next ? next : null)
+              const next = event.target.value;
+              onChangeCustomStartOn(next ? next : null);
             }}
           />
           <InlineError id="custom_start_on-error" message={customDateError} />
         </div>
       ) : null}
     </fieldset>
-  )
-}
+  );
+};
 
-type AdvancedSectionProps = {
-  value: WateringPlanAdvancedState
-  errors?: Pick<WateringPlanFormErrors, 'horizon_days' | 'schedule_basis' | 'overdue_policy'>
-  onChange: (patch: Partial<WateringPlanAdvancedState>) => void
+interface AdvancedSectionProps {
+  value: WateringPlanAdvancedState;
+  errors?: Pick<WateringPlanFormErrors, "horizon_days" | "schedule_basis" | "overdue_policy">;
+  onChange: (patch: Partial<WateringPlanAdvancedState>) => void;
   refs: {
-    horizon: RefObject<HTMLInputElement>
-    schedule: RefObject<HTMLSelectElement>
-    overdue: RefObject<HTMLSelectElement>
-  }
+    horizon: RefObject<HTMLInputElement>;
+    schedule: RefObject<HTMLSelectElement>;
+    overdue: RefObject<HTMLSelectElement>;
+  };
 }
 
 const AdvancedSection: FC<AdvancedSectionProps> = ({ value, errors, onChange, refs }) => {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <details
@@ -184,7 +183,7 @@ const AdvancedSection: FC<AdvancedSectionProps> = ({ value, errors, onChange, re
     >
       <summary className="flex cursor-pointer items-center justify-between text-base font-semibold text-foreground">
         Zaawansowane
-        <span className="text-sm text-muted-foreground">{isOpen ? 'Ukryj' : 'Rozwiń'}</span>
+        <span className="text-sm text-muted-foreground">{isOpen ? "Ukryj" : "Rozwiń"}</span>
       </summary>
 
       <div className="mt-4 space-y-4">
@@ -198,9 +197,9 @@ const AdvancedSection: FC<AdvancedSectionProps> = ({ value, errors, onChange, re
             max={365}
             step={1}
             inputMode="numeric"
-            value={value.horizonDays === '' ? '' : String(value.horizonDays)}
+            value={value.horizonDays === "" ? "" : String(value.horizonDays)}
             aria-invalid={Boolean(errors?.horizon_days?.[0])}
-            aria-describedby={errors?.horizon_days?.[0] ? 'horizon_days-error' : undefined}
+            aria-describedby={errors?.horizon_days?.[0] ? "horizon_days-error" : undefined}
             onChange={(event) => onChange({ horizonDays: parseNumericInput(event.target.value) })}
           />
           <InlineError id="horizon_days-error" message={errors?.horizon_days?.[0]} />
@@ -214,10 +213,10 @@ const AdvancedSection: FC<AdvancedSectionProps> = ({ value, errors, onChange, re
             className="w-full rounded-2xl border border-border/70 bg-background p-3 text-sm transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
             value={value.scheduleBasis}
             aria-invalid={Boolean(errors?.schedule_basis?.[0])}
-            aria-describedby={errors?.schedule_basis?.[0] ? 'schedule_basis-error' : undefined}
+            aria-describedby={errors?.schedule_basis?.[0] ? "schedule_basis-error" : undefined}
             onChange={(event) =>
               onChange({
-                scheduleBasis: event.target.value as WateringPlanAdvancedState['scheduleBasis'],
+                scheduleBasis: event.target.value as WateringPlanAdvancedState["scheduleBasis"],
               })
             }
           >
@@ -235,10 +234,10 @@ const AdvancedSection: FC<AdvancedSectionProps> = ({ value, errors, onChange, re
             className="w-full rounded-2xl border border-border/70 bg-background p-3 text-sm transition focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
             value={value.overduePolicy}
             aria-invalid={Boolean(errors?.overdue_policy?.[0])}
-            aria-describedby={errors?.overdue_policy?.[0] ? 'overdue_policy-error' : undefined}
+            aria-describedby={errors?.overdue_policy?.[0] ? "overdue_policy-error" : undefined}
             onChange={(event) =>
               onChange({
-                overduePolicy: event.target.value as WateringPlanAdvancedState['overduePolicy'],
+                overduePolicy: event.target.value as WateringPlanAdvancedState["overduePolicy"],
               })
             }
           >
@@ -249,25 +248,25 @@ const AdvancedSection: FC<AdvancedSectionProps> = ({ value, errors, onChange, re
         </div>
       </div>
     </details>
-  )
-}
+  );
+};
 
-type FormActionsProps = {
-  pending: boolean
-  canSubmit: boolean
-  onCancel: () => void
+interface FormActionsProps {
+  pending: boolean;
+  canSubmit: boolean;
+  onCancel: () => void;
 }
 
 const FormActions: FC<FormActionsProps> = ({ pending, canSubmit, onCancel }) => (
   <div className="flex flex-wrap gap-3">
     <Button type="submit" disabled={!canSubmit || pending}>
-      {pending ? 'Zapisywanie…' : 'Zapisz plan'}
+      {pending ? "Zapisywanie…" : "Zapisz plan"}
     </Button>
     <Button type="button" variant="ghost" onClick={onCancel} disabled={pending}>
       Anuluj
     </Button>
   </div>
-)
+);
 
 export const WateringPlanForm: FC<WateringPlanFormProps> = ({
   value,
@@ -281,42 +280,40 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
   onSubmit,
   onCancel,
 }) => {
-  const intervalRef = useRef<HTMLInputElement>(null)
-  const startRadioRef = useRef<HTMLInputElement>(null)
-  const customDateRef = useRef<HTMLInputElement>(null)
-  const horizonRef = useRef<HTMLInputElement>(null)
-  const scheduleRef = useRef<HTMLSelectElement>(null)
-  const overdueRef = useRef<HTMLSelectElement>(null)
+  const intervalRef = useRef<HTMLInputElement>(null);
+  const startRadioRef = useRef<HTMLInputElement>(null);
+  const customDateRef = useRef<HTMLInputElement>(null);
+  const horizonRef = useRef<HTMLInputElement>(null);
+  const scheduleRef = useRef<HTMLSelectElement>(null);
+  const overdueRef = useRef<HTMLSelectElement>(null);
 
   const errorFocusOrder = useMemo(
     () => [
-      { field: 'interval_days', ref: intervalRef },
-      { field: 'start_from', ref: startRadioRef },
-      { field: 'custom_start_on', ref: customDateRef },
-      { field: 'horizon_days', ref: horizonRef },
-      { field: 'schedule_basis', ref: scheduleRef },
-      { field: 'overdue_policy', ref: overdueRef },
+      { field: "interval_days", ref: intervalRef },
+      { field: "start_from", ref: startRadioRef },
+      { field: "custom_start_on", ref: customDateRef },
+      { field: "horizon_days", ref: horizonRef },
+      { field: "schedule_basis", ref: scheduleRef },
+      { field: "overdue_policy", ref: overdueRef },
     ],
-    [],
-  )
+    []
+  );
 
   useEffect(() => {
-    if (!errors) return
+    if (!errors) return;
     for (const entry of errorFocusOrder) {
-      const fieldErrors = (errors as Record<string, string[] | undefined>)[
-        entry.field
-      ]
+      const fieldErrors = (errors as Record<string, string[] | undefined>)[entry.field];
       if (fieldErrors && fieldErrors.length > 0 && entry.ref.current) {
-        entry.ref.current.focus()
-        return
+        entry.ref.current.focus();
+        return;
       }
     }
-  }, [errorFocusOrder, errors])
+  }, [errorFocusOrder, errors]);
 
   const handleSubmit = (event: FormEvent) => {
-    event.preventDefault()
-    onSubmit()
-  }
+    event.preventDefault();
+    onSubmit();
+  };
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit} noValidate>
@@ -335,9 +332,9 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
           customDateError={errors?.custom_start_on?.[0]}
           pending={pending}
           onChangeStartFrom={(next) => {
-            onChangeStartFrom(next)
-            if (next === 'today') {
-              onChangeCustomStartOn(null)
+            onChangeStartFrom(next);
+            if (next === "today") {
+              onChangeCustomStartOn(null);
             }
           }}
           onChangeCustomStartOn={onChangeCustomStartOn}
@@ -375,8 +372,7 @@ export const WateringPlanForm: FC<WateringPlanFormProps> = ({
 
       <FormActions pending={pending} canSubmit={canSubmit} onCancel={onCancel} />
     </form>
-  )
-}
+  );
+};
 
-WateringPlanForm.displayName = 'WateringPlanForm'
-
+WateringPlanForm.displayName = "WateringPlanForm";

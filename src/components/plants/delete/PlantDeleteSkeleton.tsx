@@ -1,4 +1,4 @@
-import type { FC } from 'react'
+import type { FC } from "react";
 
 export const PlantDeleteSkeleton: FC = () => (
   <div className="space-y-6">
@@ -22,7 +22,6 @@ export const PlantDeleteSkeleton: FC = () => (
       </div>
     </div>
   </div>
-)
+);
 
-PlantDeleteSkeleton.displayName = 'PlantDeleteSkeleton'
-
+PlantDeleteSkeleton.displayName = "PlantDeleteSkeleton";

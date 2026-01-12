@@ -1,14 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { logger } from "@/lib/logger";
 
-import {
-  CalendarMonthApiError,
-  getCalendarMonth,
-} from '@/lib/services/calendar/month-client'
-import type { CalendarTaskStatusFilter } from '@/lib/services/calendar/types'
-import type {
-  CalendarMonthErrorVm,
-  CalendarMonthVm,
-} from '@/lib/services/calendar/month-view-model'
+import { CalendarMonthApiError, getCalendarMonth } from "@/lib/services/calendar/month-client";
+import type { CalendarTaskStatusFilter } from "@/lib/services/calendar/types";
+import type { CalendarMonthErrorVm, CalendarMonthVm } from "@/lib/services/calendar/month-view-model";
 import {
   buildCalendarMonthErrorVm,
   buildCalendarMonthVm,
@@ -16,169 +11,164 @@ import {
   getCalendarMonthCacheKey,
   isValidCalendarMonthString,
   normalizeCalendarStatusFilter,
-} from '@/lib/services/calendar/month-view-model'
+} from "@/lib/services/calendar/month-view-model";
 
-type UseCalendarMonthParams = {
-  month: string
-  status?: CalendarTaskStatusFilter
+interface UseCalendarMonthParams {
+  month: string;
+  status?: CalendarTaskStatusFilter;
 }
 
 type UseCalendarMonthState =
   | {
-      status: 'idle'
-      data?: undefined
-      error?: undefined
-      requestId?: undefined
+      status: "idle";
+      data?: undefined;
+      error?: undefined;
+      requestId?: undefined;
     }
   | {
-      status: 'loading'
-      data?: CalendarMonthVm
-      error?: undefined
-      requestId?: string
+      status: "loading";
+      data?: CalendarMonthVm;
+      error?: undefined;
+      requestId?: string;
     }
   | {
-      status: 'success'
-      data: CalendarMonthVm
-      error?: undefined
-      requestId?: string
+      status: "success";
+      data: CalendarMonthVm;
+      error?: undefined;
+      requestId?: string;
     }
   | {
-      status: 'error'
-      data?: CalendarMonthVm
-      error: CalendarMonthErrorVm
-      requestId?: string
-    }
+      status: "error";
+      data?: CalendarMonthVm;
+      error: CalendarMonthErrorVm;
+      requestId?: string;
+    };
 
 type UseCalendarMonthResult = UseCalendarMonthState & {
-  reload: () => void
-}
+  reload: () => void;
+};
 
-const cache = new Map<string, CalendarMonthVm>()
+const cache = new Map<string, CalendarMonthVm>();
 
-export const invalidateCalendarMonthCache = (
-  predicate?: (key: string, value: CalendarMonthVm) => boolean,
-): void => {
+export const invalidateCalendarMonthCache = (predicate?: (key: string, value: CalendarMonthVm) => boolean): void => {
   if (!predicate) {
-    cache.clear()
-    return
+    cache.clear();
+    return;
   }
 
   for (const [key, value] of cache.entries()) {
     if (predicate(key, value)) {
-      cache.delete(key)
+      cache.delete(key);
     }
   }
-}
+};
 
 export const invalidateCalendarMonthCacheByMonth = (month: string): void => {
-  invalidateCalendarMonthCache((key) => key.startsWith(`${month}:`))
-}
+  invalidateCalendarMonthCache((key) => key.startsWith(`${month}:`));
+};
 
 export const useCalendarMonth = ({
   month,
-  status: statusInput = 'pending',
+  status: statusInput = "pending",
 }: UseCalendarMonthParams): UseCalendarMonthResult => {
-  const status = normalizeCalendarStatusFilter(statusInput)
-  const isMonthValid = useMemo(() => isValidCalendarMonthString(month), [month])
+  const status = normalizeCalendarStatusFilter(statusInput);
+  const isMonthValid = useMemo(() => isValidCalendarMonthString(month), [month]);
 
-  const [reloadToken, setReloadToken] = useState(0)
-  const [state, setState] = useState<UseCalendarMonthState>({ status: 'idle' })
+  const [reloadToken, setReloadToken] = useState(0);
+  const [state, setState] = useState<UseCalendarMonthState>({ status: "idle" });
 
-  const abortControllerRef = useRef<AbortController | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     return () => {
-      abortControllerRef.current?.abort()
-    }
-  }, [])
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   useEffect(() => {
-    abortControllerRef.current?.abort()
+    abortControllerRef.current?.abort();
 
     if (!isMonthValid) {
       setState({
-        status: 'error',
+        status: "error",
         error: buildClientValidationErrorVm(month),
-      })
-      return
+      });
+      return;
     }
 
-    const cacheKey = getCalendarMonthCacheKey(month, status)
-    const cached = cache.get(cacheKey)
+    const cacheKey = getCalendarMonthCacheKey(month, status);
+    const cached = cache.get(cacheKey);
 
     if (cached && reloadToken === 0) {
-      setState({ status: 'success', data: cached })
-      return
+      setState({ status: "success", data: cached });
+      return;
     }
 
-    const controller = new AbortController()
-    abortControllerRef.current = controller
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-    let isActive = true
+    let isActive = true;
 
     setState((prev) => ({
-      status: 'loading',
-      data: prev.status === 'success' ? prev.data : undefined,
+      status: "loading",
+      data: prev.status === "success" ? prev.data : undefined,
       requestId: prev.requestId,
-    }))
+    }));
 
     const fetchMonth = async () => {
       try {
-        const { data, requestId } = await getCalendarMonth(
-          { month, status },
-          { signal: controller.signal },
-        )
+        const { data, requestId } = await getCalendarMonth({ month, status }, { signal: controller.signal });
 
-        if (!isActive) return
+        if (!isActive) return;
 
-        const vm = buildCalendarMonthVm(data, status)
-        cache.set(cacheKey, vm)
+        const vm = buildCalendarMonthVm(data, status);
+        cache.set(cacheKey, vm);
 
         setState({
-          status: 'success',
+          status: "success",
           data: vm,
           requestId,
-        })
+        });
       } catch (error) {
-        if (!isActive) return
-        if (controller.signal.aborted) return
+        if (!isActive) return;
+        if (controller.signal.aborted) return;
 
         if (error instanceof CalendarMonthApiError) {
           setState({
-            status: 'error',
+            status: "error",
             error: buildCalendarMonthErrorVm(error),
             requestId: error.requestId,
-          })
-          return
+          });
+          return;
         }
 
-        console.error('Unexpected error in useCalendarMonth', error)
+        logger.error("Unexpected error in useCalendarMonth", error);
         setState({
-          status: 'error',
+          status: "error",
           error: {
-            kind: 'unknown',
-            message: 'Nie udało się wczytać kalendarza',
+            kind: "unknown",
+            message: "Nie udało się wczytać kalendarza",
           },
-        })
+        });
       }
-    }
+    };
 
-    void fetchMonth()
+    void fetchMonth();
 
     return () => {
-      isActive = false
-      controller.abort()
-    }
-  }, [isMonthValid, month, reloadToken, status])
+      isActive = false;
+      controller.abort();
+    };
+  }, [isMonthValid, month, reloadToken, status]);
 
   const reload = useCallback(() => {
-    setReloadToken((token) => token + 1)
-  }, [])
+    setReloadToken((token) => token + 1);
+  }, []);
 
   return {
     ...state,
     reload,
-  }
-}
+  };
+};
 
-useCalendarMonth.displayName = 'useCalendarMonth'
+useCalendarMonth.displayName = "useCalendarMonth";

@@ -1,36 +1,33 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react";
 
-import { CheckCircle2, Info } from 'lucide-react'
+import { CheckCircle2, Info } from "lucide-react";
 
-type AuthNoticeProps = {
-  tone?: 'success' | 'info'
-  title: string
-  description?: ReactNode
-  children?: ReactNode
+interface AuthNoticeProps {
+  tone?: "success" | "info";
+  title: string;
+  description?: ReactNode;
+  children?: ReactNode;
 }
 
-const toneClasses: Record<
-  NonNullable<AuthNoticeProps['tone']>,
-  { container: string; text: string }
-> = {
+const toneClasses: Record<NonNullable<AuthNoticeProps["tone"]>, { container: string; text: string }> = {
   success: {
-    container: 'border-emerald-200 bg-emerald-50',
-    text: 'text-emerald-900',
+    container: "border-emerald-200 bg-emerald-50",
+    text: "text-emerald-900",
   },
   info: {
-    container: 'border-primary/30 bg-primary/5',
-    text: 'text-primary/90',
+    container: "border-primary/30 bg-primary/5",
+    text: "text-primary/90",
   },
-}
+};
 
 const icons = {
   success: CheckCircle2,
   info: Info,
-}
+};
 
-export const AuthNotice = ({ tone = 'info', title, description, children }: AuthNoticeProps) => {
-  const classes = toneClasses[tone]
-  const Icon = icons[tone]
+export const AuthNotice = ({ tone = "info", title, description, children }: AuthNoticeProps) => {
+  const classes = toneClasses[tone];
+  const Icon = icons[tone];
   return (
     <div
       role="status"
@@ -43,7 +40,7 @@ export const AuthNotice = ({ tone = 'info', title, description, children }: Auth
         {children}
       </div>
     </div>
-  )
-}
+  );
+};
 
-AuthNotice.displayName = 'AuthNotice'
+AuthNotice.displayName = "AuthNotice";

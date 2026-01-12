@@ -9,8 +9,7 @@ const searchParams = Astro.url.searchParams;
 const modeParam = searchParams.get("mode");
 const aiRequestIdParam = searchParams.get("ai_request_id");
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const normalizeMode = (value: string | null): "manual" | "ai" => {
   if (value === "ai") return "ai";
@@ -34,11 +33,5 @@ const pageTitle = isPlantIdValid ? "Edytor planu podlewania" : "Roślina — nie
 ---
 
 <Layout title={pageTitle}>
-  <WateringPlanEditorView
-    client:load
-    plantId={safePlantId}
-    mode={mode}
-    aiRequestId={aiRequestId ?? undefined}
-  />
+  <WateringPlanEditorView client:load plantId={safePlantId} mode={mode} aiRequestId={aiRequestId ?? undefined} />
 </Layout>
-

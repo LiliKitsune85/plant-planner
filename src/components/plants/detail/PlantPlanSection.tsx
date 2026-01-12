@@ -1,16 +1,16 @@
-import type { FC } from 'react'
+import type { FC } from "react";
 
-import type { PlantDetailVm } from '@/components/plants/detail/types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import type { PlantDetailVm } from "@/components/plants/detail/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-import { ActivePlanCard } from './ActivePlanCard'
-import { NoPlanCard } from './NoPlanCard'
+import { ActivePlanCard } from "./ActivePlanCard";
+import { NoPlanCard } from "./NoPlanCard";
 
-export type PlantPlanSectionProps = {
-  activePlan: PlantDetailVm['activePlan']
-  changePlanHref: string
-  generateAiHref: string
-  setManualHref: string
+export interface PlantPlanSectionProps {
+  activePlan: PlantDetailVm["activePlan"];
+  changePlanHref: string;
+  generateAiHref: string;
+  setManualHref: string;
 }
 
 export const PlantPlanSection: FC<PlantPlanSectionProps> = ({
@@ -31,7 +31,6 @@ export const PlantPlanSection: FC<PlantPlanSectionProps> = ({
       )}
     </CardContent>
   </Card>
-)
+);
 
-PlantPlanSection.displayName = 'PlantPlanSection'
-
+PlantPlanSection.displayName = "PlantPlanSection";

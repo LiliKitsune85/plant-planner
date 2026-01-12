@@ -18,7 +18,6 @@ export const PlantDetailSkeleton = () => (
       <div className="h-10 rounded bg-muted" />
     </div>
   </div>
-)
+);
 
-PlantDetailSkeleton.displayName = 'PlantDetailSkeleton'
-
+PlantDetailSkeleton.displayName = "PlantDetailSkeleton";

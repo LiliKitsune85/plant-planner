@@ -1,18 +1,18 @@
-import type { CalendarDayTaskVm } from '@/lib/services/calendar/day-view-model'
+import type { CalendarDayTaskVm } from "@/lib/services/calendar/day-view-model";
 
-import { WateringTaskRow } from './WateringTaskRow'
+import { WateringTaskRow } from "./WateringTaskRow";
 
-type CalendarDayTaskListProps = {
-  items: CalendarDayTaskVm[]
-  pendingByTaskId?: Record<string, boolean>
-  highlightPlantId?: string
-  onConfirm?: (task: CalendarDayTaskVm) => void
-  onUndo?: (task: CalendarDayTaskVm) => void
-  onEdit?: (task: CalendarDayTaskVm) => void
-  onDelete?: (task: CalendarDayTaskVm) => void
+interface CalendarDayTaskListProps {
+  items: CalendarDayTaskVm[];
+  pendingByTaskId?: Record<string, boolean>;
+  highlightPlantId?: string;
+  onConfirm?: (task: CalendarDayTaskVm) => void;
+  onUndo?: (task: CalendarDayTaskVm) => void;
+  onEdit?: (task: CalendarDayTaskVm) => void;
+  onDelete?: (task: CalendarDayTaskVm) => void;
 }
 
-const EMPTY_PENDING_MAP: Record<string, boolean> = {}
+const EMPTY_PENDING_MAP: Record<string, boolean> = {};
 
 export const CalendarDayTaskList = ({
   items,
@@ -37,6 +37,6 @@ export const CalendarDayTaskList = ({
       />
     ))}
   </ul>
-)
+);
 
-CalendarDayTaskList.displayName = 'CalendarDayTaskList'
+CalendarDayTaskList.displayName = "CalendarDayTaskList";

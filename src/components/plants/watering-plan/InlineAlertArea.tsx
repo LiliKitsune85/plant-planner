@@ -1,32 +1,32 @@
-import type { FC } from 'react'
+import type { FC } from "react";
 
-import type { SetPlanErrorVm } from '@/components/plants/watering-plan/types'
+import type { SetPlanErrorVm } from "@/components/plants/watering-plan/types";
 
-type InlineAlertAreaProps = {
-  error?: SetPlanErrorVm | null
-  onDismiss?: () => void
+interface InlineAlertAreaProps {
+  error?: SetPlanErrorVm | null;
+  onDismiss?: () => void;
 }
 
-const getToneClasses = (kind: SetPlanErrorVm['kind']) => {
+const getToneClasses = (kind: SetPlanErrorVm["kind"]) => {
   switch (kind) {
-    case 'validation':
-      return 'border-amber-500/40 bg-amber-500/10 text-amber-900'
-    case 'unauthenticated':
-    case 'not_found':
-    case 'http':
-    case 'network':
-    case 'parse':
-    case 'unknown':
-    case 'conflict':
-      return 'border-destructive/40 bg-destructive/10 text-destructive-foreground'
+    case "validation":
+      return "border-amber-500/40 bg-amber-500/10 text-amber-900";
+    case "unauthenticated":
+    case "not_found":
+    case "http":
+    case "network":
+    case "parse":
+    case "unknown":
+    case "conflict":
+      return "border-destructive/40 bg-destructive/10 text-destructive-foreground";
     default:
-      return 'border-border bg-muted text-foreground'
+      return "border-border bg-muted text-foreground";
   }
-}
+};
 
 export const InlineAlertArea: FC<InlineAlertAreaProps> = ({ error, onDismiss }) => {
-  if (!error) return null
-  const tone = getToneClasses(error.kind)
+  if (!error) return null;
+  const tone = getToneClasses(error.kind);
   return (
     <section className={`flex flex-wrap items-start gap-4 rounded-2xl border p-4 text-sm ${tone}`}>
       <div className="space-y-1">
@@ -47,8 +47,7 @@ export const InlineAlertArea: FC<InlineAlertAreaProps> = ({ error, onDismiss }) 
         </button>
       ) : null}
     </section>
-  )
-}
+  );
+};
 
-InlineAlertArea.displayName = 'InlineAlertArea'
-
+InlineAlertArea.displayName = "InlineAlertArea";

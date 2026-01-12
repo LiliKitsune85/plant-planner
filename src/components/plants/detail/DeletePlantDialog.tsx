@@ -1,22 +1,17 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { FC } from 'react'
+import { useCallback, useEffect, useState } from "react";
+import type { FC } from "react";
 
-import type { PlantDetailMutationErrorVm } from '@/components/plants/detail/types'
-import { Button } from '@/components/ui/button'
-import {
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-} from '@/components/ui/modal'
+import type { PlantDetailMutationErrorVm } from "@/components/plants/detail/types";
+import { Button } from "@/components/ui/button";
+import { Modal, ModalBody, ModalFooter, ModalHeader } from "@/components/ui/modal";
 
-export type DeletePlantDialogProps = {
-  open: boolean
-  plantDisplayName: string
-  pending: boolean
-  error?: PlantDetailMutationErrorVm | null
-  onOpenChange: (open: boolean) => void
-  onConfirm: () => Promise<void> | void
+export interface DeletePlantDialogProps {
+  open: boolean;
+  plantDisplayName: string;
+  pending: boolean;
+  error?: PlantDetailMutationErrorVm | null;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => Promise<void> | void;
 }
 
 export const DeletePlantDialog: FC<DeletePlantDialogProps> = ({
@@ -27,17 +22,17 @@ export const DeletePlantDialog: FC<DeletePlantDialogProps> = ({
   onOpenChange,
   onConfirm,
 }) => {
-  const [confirmationChecked, setConfirmationChecked] = useState(false)
+  const [confirmationChecked, setConfirmationChecked] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      setConfirmationChecked(false)
+      setConfirmationChecked(false);
     }
-  }, [open])
+  }, [open]);
 
   const handleConfirm = useCallback(async () => {
-    await onConfirm()
-  }, [onConfirm])
+    await onConfirm();
+  }, [onConfirm]);
 
   return (
     <Modal open={open} onClose={() => onOpenChange(false)} labelledBy="delete-plant-title">
@@ -49,8 +44,8 @@ export const DeletePlantDialog: FC<DeletePlantDialogProps> = ({
       </ModalHeader>
       <ModalBody>
         <p className="text-base text-muted-foreground">
-          Ta operacja jest nieodwracalna i usunie wszystkie powiązane dane planów oraz historii
-          podlewania. Zaznacz potwierdzenie, aby kontynuować.
+          Ta operacja jest nieodwracalna i usunie wszystkie powiązane dane planów oraz historii podlewania. Zaznacz
+          potwierdzenie, aby kontynuować.
         </p>
         <label className="flex items-center gap-3 text-sm text-foreground">
           <input
@@ -65,9 +60,7 @@ export const DeletePlantDialog: FC<DeletePlantDialogProps> = ({
         {error ? (
           <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
             {error.message}
-            {error.code ? (
-              <p className="text-xs text-destructive/80">Kod błędu: {error.code}</p>
-            ) : null}
+            {error.code ? <p className="text-xs text-destructive/80">Kod błędu: {error.code}</p> : null}
           </div>
         ) : null}
       </ModalBody>
@@ -75,17 +68,12 @@ export const DeletePlantDialog: FC<DeletePlantDialogProps> = ({
         <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={pending}>
           Anuluj
         </Button>
-        <Button
-          variant="destructive"
-          onClick={handleConfirm}
-          disabled={!confirmationChecked || pending}
-        >
-          {pending ? 'Usuwanie…' : 'Usuń roślinę'}
+        <Button variant="destructive" onClick={handleConfirm} disabled={!confirmationChecked || pending}>
+          {pending ? "Usuwanie…" : "Usuń roślinę"}
         </Button>
       </ModalFooter>
     </Modal>
-  )
-}
+  );
+};
 
-DeletePlantDialog.displayName = 'DeletePlantDialog'
-
+DeletePlantDialog.displayName = "DeletePlantDialog";

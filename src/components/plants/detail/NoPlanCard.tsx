@@ -1,10 +1,10 @@
-import type { FC } from 'react'
+import type { FC } from "react";
 
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 
-type NoPlanCardProps = {
-  generateAiHref: string
-  setManualHref: string
+interface NoPlanCardProps {
+  generateAiHref: string;
+  setManualHref: string;
 }
 
 export const NoPlanCard: FC<NoPlanCardProps> = ({ generateAiHref, setManualHref }) => (
@@ -25,7 +25,6 @@ export const NoPlanCard: FC<NoPlanCardProps> = ({ generateAiHref, setManualHref 
       </Button>
     </div>
   </div>
-)
+);
 
-NoPlanCard.displayName = 'NoPlanCard'
-
+NoPlanCard.displayName = "NoPlanCard";

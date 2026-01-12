@@ -1,9 +1,9 @@
-const LIMIT_OPTIONS = [10, 20, 30, 50, 100]
+const LIMIT_OPTIONS = [10, 20, 30, 50, 100];
 
-type PlantsLimitSelectProps = {
-  value: number
-  disabled?: boolean
-  onChange: (next: number) => void
+interface PlantsLimitSelectProps {
+  value: number;
+  disabled?: boolean;
+  onChange: (next: number) => void;
 }
 
 export const PlantsLimitSelect = ({ value, disabled = false, onChange }: PlantsLimitSelectProps) => {
@@ -23,7 +23,7 @@ export const PlantsLimitSelect = ({ value, disabled = false, onChange }: PlantsL
         ))}
       </select>
     </label>
-  )
-}
+  );
+};
 
-PlantsLimitSelect.displayName = 'PlantsLimitSelect'
+PlantsLimitSelect.displayName = "PlantsLimitSelect";

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { logger } from "@/lib/logger";
 
-import type { PlantDeleteErrorVm, PlantDeleteVm } from '@/components/plants/delete/types'
+import type { PlantDeleteErrorVm, PlantDeleteVm } from "@/components/plants/delete/types";
 import {
   buildInvalidPlantIdErrorVm,
   buildMissingPlantIdErrorVm,
@@ -8,151 +9,148 @@ import {
   isValidPlantId,
   mapPlantDetailDtoToPlantDeleteVm,
   mapPlantsApiErrorToPlantDeleteErrorVm,
-} from '@/lib/services/plants/delete-view-model'
-import { getPlantDetail, PlantsApiError } from '@/lib/services/plants/plants-client'
+} from "@/lib/services/plants/delete-view-model";
+import { getPlantDetail, PlantsApiError } from "@/lib/services/plants/plants-client";
 
-type UsePlantDeleteParams = {
-  plantId: string
+interface UsePlantDeleteParams {
+  plantId: string;
 }
 
-type PlantDeleteStatus = 'idle' | 'loading' | 'success' | 'error'
+type PlantDeleteStatus = "idle" | "loading" | "success" | "error";
 
-export type UsePlantDeleteResult = {
-  status: PlantDeleteStatus
-  data?: PlantDeleteVm
-  error?: PlantDeleteErrorVm
-  requestId?: string
-  reload: () => void
+export interface UsePlantDeleteResult {
+  status: PlantDeleteStatus;
+  data?: PlantDeleteVm;
+  error?: PlantDeleteErrorVm;
+  requestId?: string;
+  reload: () => void;
 }
 
-const plantDeleteVmCache = new Map<string, PlantDeleteVm>()
-const plantDeleteErrorCache = new Map<string, PlantDeleteErrorVm>()
+const plantDeleteVmCache = new Map<string, PlantDeleteVm>();
+const plantDeleteErrorCache = new Map<string, PlantDeleteErrorVm>();
 
 export const invalidatePlantDeleteCacheById = (plantId: string): void => {
-  plantDeleteVmCache.delete(plantId)
-  plantDeleteErrorCache.delete(plantId)
-}
+  plantDeleteVmCache.delete(plantId);
+  plantDeleteErrorCache.delete(plantId);
+};
 
 export const usePlantDelete = ({ plantId }: UsePlantDeleteParams): UsePlantDeleteResult => {
-  const [status, setStatus] = useState<PlantDeleteStatus>('idle')
+  const [status, setStatus] = useState<PlantDeleteStatus>("idle");
   const [data, setData] = useState<PlantDeleteVm | undefined>(() =>
-    plantId ? plantDeleteVmCache.get(plantId) : undefined,
-  )
+    plantId ? plantDeleteVmCache.get(plantId) : undefined
+  );
   const [error, setError] = useState<PlantDeleteErrorVm | undefined>(() =>
-    plantId ? plantDeleteErrorCache.get(plantId) : undefined,
-  )
-  const [requestId, setRequestId] = useState<string | undefined>(undefined)
-  const [reloadToken, setReloadToken] = useState(0)
-  const abortControllerRef = useRef<AbortController | null>(null)
+    plantId ? plantDeleteErrorCache.get(plantId) : undefined
+  );
+  const [requestId, setRequestId] = useState<string | undefined>(undefined);
+  const [reloadToken, setReloadToken] = useState(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(
     () => () => {
-      abortControllerRef.current?.abort()
+      abortControllerRef.current?.abort();
     },
-    [],
-  )
+    []
+  );
 
   useEffect(() => {
-    abortControllerRef.current?.abort()
-    abortControllerRef.current = null
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
 
     if (!plantId) {
-      const missingError = buildMissingPlantIdErrorVm()
-      setStatus('error')
-      setData(undefined)
-      setError(missingError)
-      setRequestId(undefined)
-      return
+      const missingError = buildMissingPlantIdErrorVm();
+      setStatus("error");
+      setData(undefined);
+      setError(missingError);
+      setRequestId(undefined);
+      return;
     }
 
     if (!isValidPlantId(plantId)) {
-      const invalidError = buildInvalidPlantIdErrorVm()
-      setStatus('error')
-      setData(undefined)
-      setError(invalidError)
-      setRequestId(undefined)
-      return
+      const invalidError = buildInvalidPlantIdErrorVm();
+      setStatus("error");
+      setData(undefined);
+      setError(invalidError);
+      setRequestId(undefined);
+      return;
     }
 
-    const isInitialLoad = reloadToken === 0
-    const cachedVm = plantDeleteVmCache.get(plantId)
-    const cachedError = plantDeleteErrorCache.get(plantId)
+    const isInitialLoad = reloadToken === 0;
+    const cachedVm = plantDeleteVmCache.get(plantId);
+    const cachedError = plantDeleteErrorCache.get(plantId);
 
     if (isInitialLoad && cachedVm) {
-      setStatus('success')
-      setData(cachedVm)
-      setError(undefined)
-      setRequestId(undefined)
-      return
+      setStatus("success");
+      setData(cachedVm);
+      setError(undefined);
+      setRequestId(undefined);
+      return;
     }
 
     if (isInitialLoad && cachedError) {
-      setStatus('error')
-      setData(undefined)
-      setError(cachedError)
-      setRequestId(undefined)
-      return
+      setStatus("error");
+      setData(undefined);
+      setError(cachedError);
+      setRequestId(undefined);
+      return;
     }
 
-    const controller = new AbortController()
-    abortControllerRef.current = controller
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     if (cachedVm) {
-      setStatus('success')
-      setData(cachedVm)
-      setError(undefined)
+      setStatus("success");
+      setData(cachedVm);
+      setError(undefined);
     } else {
-      setStatus('loading')
-      setData(undefined)
-      setError(undefined)
+      setStatus("loading");
+      setData(undefined);
+      setError(undefined);
     }
 
     const fetchPlantDetail = async () => {
       try {
-        const { data: dto, requestId: reqId } = await getPlantDetail(
-          { plantId },
-          { signal: controller.signal },
-        )
-        const vm = mapPlantDetailDtoToPlantDeleteVm(dto)
+        const { data: dto, requestId: reqId } = await getPlantDetail({ plantId }, { signal: controller.signal });
+        const vm = mapPlantDetailDtoToPlantDeleteVm(dto);
 
-        plantDeleteVmCache.set(plantId, vm)
-        plantDeleteErrorCache.delete(plantId)
+        plantDeleteVmCache.set(plantId, vm);
+        plantDeleteErrorCache.delete(plantId);
 
-        setStatus('success')
-        setData(vm)
-        setError(undefined)
-        setRequestId(reqId)
+        setStatus("success");
+        setData(vm);
+        setError(undefined);
+        setRequestId(reqId);
       } catch (err) {
-        if (controller.signal.aborted) return
+        if (controller.signal.aborted) return;
 
-        let mappedError: PlantDeleteErrorVm
+        let mappedError: PlantDeleteErrorVm;
         if (err instanceof PlantsApiError) {
-          mappedError = mapPlantsApiErrorToPlantDeleteErrorVm(err)
+          mappedError = mapPlantsApiErrorToPlantDeleteErrorVm(err);
         } else {
-          console.error('Unexpected error while loading plant delete view', err)
-          mappedError = buildUnknownPlantDeleteErrorVm()
+          logger.error("Unexpected error while loading plant delete view", err);
+          mappedError = buildUnknownPlantDeleteErrorVm();
         }
 
-        plantDeleteVmCache.delete(plantId)
-        plantDeleteErrorCache.set(plantId, mappedError)
+        plantDeleteVmCache.delete(plantId);
+        plantDeleteErrorCache.set(plantId, mappedError);
 
-        setStatus('error')
-        setData(undefined)
-        setError(mappedError)
-        setRequestId(undefined)
+        setStatus("error");
+        setData(undefined);
+        setError(mappedError);
+        setRequestId(undefined);
       }
-    }
+    };
 
-    void fetchPlantDetail()
+    void fetchPlantDetail();
 
     return () => {
-      controller.abort()
-    }
-  }, [plantId, reloadToken])
+      controller.abort();
+    };
+  }, [plantId, reloadToken]);
 
   const reload = useCallback(() => {
-    setReloadToken((token) => token + 1)
-  }, [])
+    setReloadToken((token) => token + 1);
+  }, []);
 
   return useMemo(
     () => ({
@@ -162,9 +160,8 @@ export const usePlantDelete = ({ plantId }: UsePlantDeleteParams): UsePlantDelet
       requestId,
       reload,
     }),
-    [status, data, error, requestId, reload],
-  )
-}
+    [status, data, error, requestId, reload]
+  );
+};
 
-usePlantDelete.displayName = 'usePlantDelete'
-
+usePlantDelete.displayName = "usePlantDelete";

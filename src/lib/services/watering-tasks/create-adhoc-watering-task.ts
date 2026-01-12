@@ -1,73 +1,65 @@
-import type { Tables, TablesInsert } from '../../../db/database.types'
-import type { SupabaseClient } from '../../../db/supabase.client'
-import type {
-  AdhocWateringCommand,
-  AdhocWateringResultDto,
-  WateringTaskSummaryFields,
-} from '../../../types'
-import { HttpError } from '../../http/errors'
-import { loadActivePlanForPlant, regenerateTasksForPlan } from './plan-regeneration'
+import type { Tables, TablesInsert } from "../../../db/database.types";
+import { logger } from "@/lib/logger";
+import type { SupabaseClient } from "../../../db/supabase.client";
+import type { AdhocWateringCommand, AdhocWateringResultDto, WateringTaskSummaryFields } from "../../../types";
+import { HttpError } from "../../http/errors";
+import { loadActivePlanForPlant, regenerateTasksForPlan } from "./plan-regeneration";
 
-type WateringTaskRow = Tables<'watering_tasks'>
-type PlantRow = Tables<'plants'>
+type WateringTaskRow = Tables<"watering_tasks">;
+type PlantRow = Tables<"plants">;
 
-type ServiceContext = {
-  requestId?: string
+interface ServiceContext {
+  requestId?: string;
 }
 
-type CreateAdhocWateringTaskClients = {
-  supabaseUser: SupabaseClient
-  supabaseAdmin: SupabaseClient
+interface CreateAdhocWateringTaskClients {
+  supabaseUser: SupabaseClient;
+  supabaseAdmin: SupabaseClient;
 }
 
 const WATERING_TASK_COLUMNS = [
-  'id',
-  'plant_id',
-  'due_on',
-  'status',
-  'source',
-  'note',
-  'completed_at',
-  'completed_on',
-].join(',')
+  "id",
+  "plant_id",
+  "due_on",
+  "status",
+  "source",
+  "note",
+  "completed_at",
+  "completed_on",
+].join(",");
 
 const isUniqueViolation = (error: unknown): boolean =>
-  Boolean(
-    error &&
-      typeof error === 'object' &&
-      'code' in error &&
-      (error as { code?: string }).code === '23505',
-  )
+  Boolean(error && typeof error === "object" && "code" in error && (error as { code?: string }).code === "23505");
 
 const ensurePlantOwnership = async (
   supabaseUser: SupabaseClient,
   userId: string,
   plantId: string,
-  context?: ServiceContext,
+  context?: ServiceContext
 ): Promise<void> => {
   const { data, error } = await supabaseUser
-    .from('plants')
-    .select<Pick<PlantRow, 'id'>>('id')
-    .eq('id', plantId)
-    .eq('user_id', userId)
-    .maybeSingle()
+    .from("plants")
+    .select<Pick<PlantRow, "id">>("id")
+    .eq("id", plantId)
+    .eq("user_id", userId)
+    .maybeSingle();
 
   if (error) {
-    console.error('createAdhocWateringTask: plant lookup failed', {
+    logger.error("createAdhocWateringTask: plant lookup failed", {
       error,
       userId,
       plantId,
       requestId: context?.requestId,
-    })
-    throw new HttpError(500, 'Failed to verify plant ownership', 'PLANT_LOOKUP_FAILED')
+    });
+    throw new HttpError(500, "Failed to verify plant ownership", "PLANT_LOOKUP_FAILED");
   }
 
   if (!data) {
-    throw new HttpError(404, 'Plant not found', 'PLANT_NOT_FOUND')
+    throw new HttpError(404, "Plant not found", "PLANT_NOT_FOUND");
   }
-}
+};
 
-const mapRowToSummary = (row: WateringTaskRow): WateringTaskSummaryFields & Pick<WateringTaskRow, 'plant_id'> => ({
+const mapRowToSummary = (row: WateringTaskRow): WateringTaskSummaryFields & Pick<WateringTaskRow, "plant_id"> => ({
   id: row.id,
   plant_id: row.plant_id,
   due_on: row.due_on,
@@ -76,70 +68,66 @@ const mapRowToSummary = (row: WateringTaskRow): WateringTaskSummaryFields & Pick
   note: row.note,
   completed_at: row.completed_at,
   completed_on: row.completed_on,
-})
+});
 
 const buildInsertPayload = (
   userId: string,
   plantId: string,
-  command: AdhocWateringCommand,
-): TablesInsert<'watering_tasks'> => ({
+  command: AdhocWateringCommand
+): TablesInsert<"watering_tasks"> => ({
   user_id: userId,
   plant_id: plantId,
   plan_id: null,
   due_on: command.completed_on,
-  status: 'completed',
-  source: 'adhoc',
+  status: "completed",
+  source: "adhoc",
   note: command.note ?? null,
   completed_at: new Date().toISOString(),
   completed_on: command.completed_on,
-})
+});
 
-type CreateAdhocWateringTaskParams = {
-  userId: string
-  plantId: string
-  command: AdhocWateringCommand
-  context?: ServiceContext
+interface CreateAdhocWateringTaskParams {
+  userId: string;
+  plantId: string;
+  command: AdhocWateringCommand;
+  context?: ServiceContext;
 }
 
 export const createAdhocWateringTask = async (
   { supabaseUser, supabaseAdmin }: CreateAdhocWateringTaskClients,
-  { userId, plantId, command, context }: CreateAdhocWateringTaskParams,
+  { userId, plantId, command, context }: CreateAdhocWateringTaskParams
 ): Promise<AdhocWateringResultDto> => {
-  await ensurePlantOwnership(supabaseUser, userId, plantId, context)
+  await ensurePlantOwnership(supabaseUser, userId, plantId, context);
 
-  const payload = buildInsertPayload(userId, plantId, command)
-  const {
-    data,
-    error,
-  } = await supabaseAdmin
-    .from('watering_tasks')
+  const payload = buildInsertPayload(userId, plantId, command);
+  const { data, error } = await supabaseAdmin
+    .from("watering_tasks")
     .insert(payload)
     .select<WateringTaskRow>(WATERING_TASK_COLUMNS)
-    .single()
+    .single();
 
   if (error || !data) {
     if (isUniqueViolation(error)) {
-      throw new HttpError(409, 'Watering task already exists for this day', 'TASK_ALREADY_EXISTS')
+      throw new HttpError(409, "Watering task already exists for this day", "TASK_ALREADY_EXISTS");
     }
 
-    console.error('createAdhocWateringTask: insert failed', {
+    logger.error("createAdhocWateringTask: insert failed", {
       error,
       userId,
       plantId,
       completed_on: command.completed_on,
       requestId: context?.requestId,
-    })
-    throw new HttpError(500, 'Failed to create watering task', 'TASK_INSERT_FAILED')
+    });
+    throw new HttpError(500, "Failed to create watering task", "TASK_INSERT_FAILED");
   }
 
-  const plan = await loadActivePlanForPlant(supabaseUser, userId, plantId, context)
+  const plan = await loadActivePlanForPlant(supabaseUser, userId, plantId, context);
 
-  if (plan && plan.schedule_basis === 'completed_on') {
-    await regenerateTasksForPlan(supabaseUser, userId, plan, context)
+  if (plan && plan.schedule_basis === "completed_on") {
+    await regenerateTasksForPlan(supabaseUser, userId, plan, context);
   }
 
   return {
     task: mapRowToSummary(data),
-  }
-}
-
+  };
+};

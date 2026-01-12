@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { logger } from "@/lib/logger";
 import { defineMiddleware } from "astro:middleware";
 
 import type { Database } from "../db/database.types.ts";
@@ -9,9 +10,7 @@ const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
 const PRIVATE_UI_PATHS = ["/calendar", "/plants", "/settings"];
 
 const isPrivatePath = (pathname: string): boolean =>
-  PRIVATE_UI_PATHS.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  PRIVATE_UI_PATHS.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
 const buildLoginRedirectUrl = (baseUrl: URL): URL => {
   const loginUrl = new URL("/auth/login", baseUrl);
@@ -80,15 +79,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.locals.user = user;
 
     try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("timezone")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const { data: profile } = await supabase.from("profiles").select("timezone").eq("user_id", user.id).maybeSingle();
 
       context.locals.profileTimezone = profile?.timezone ?? null;
     } catch (profileError) {
-      console.error("Failed to load profile timezone", {
+      logger.error("Failed to load profile timezone", {
         error: profileError,
         userId: user.id,
         path: pathname,

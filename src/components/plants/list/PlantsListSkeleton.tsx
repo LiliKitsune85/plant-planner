@@ -1,4 +1,4 @@
-const PLACEHOLDER_ITEMS = Array.from({ length: 5 }, (_, index) => index)
+const PLACEHOLDER_ITEMS = Array.from({ length: 5 }, (_, index) => index);
 
 export const PlantsListSkeleton = () => {
   return (
@@ -17,7 +17,7 @@ export const PlantsListSkeleton = () => {
         </div>
       ))}
     </div>
-  )
-}
+  );
+};
 
-PlantsListSkeleton.displayName = 'PlantsListSkeleton'
+PlantsListSkeleton.displayName = "PlantsListSkeleton";

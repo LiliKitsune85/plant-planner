@@ -1,25 +1,21 @@
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 
-import type { PlantEditErrorVm } from './types'
+import type { PlantEditErrorVm } from "./types";
 
-type PlantEditErrorStateProps = {
-  error: PlantEditErrorVm
-  onRetry?: () => void
-  loginHref?: string
+interface PlantEditErrorStateProps {
+  error: PlantEditErrorVm;
+  onRetry?: () => void;
+  loginHref?: string;
 }
 
-const fallbackHref = '/plants'
+const fallbackHref = "/plants";
 
 export const PlantEditErrorState = ({ error, onRetry, loginHref }: PlantEditErrorStateProps) => {
   const showRetry =
-    error.kind === 'network' ||
-    error.kind === 'http' ||
-    error.kind === 'unknown' ||
-    error.kind === 'parse'
-  const showLogin = error.kind === 'unauthenticated' && loginHref
-  const secondaryHref =
-    error.kind === 'validation' || error.kind === 'notFound' ? fallbackHref : '/calendar'
+    error.kind === "network" || error.kind === "http" || error.kind === "unknown" || error.kind === "parse";
+  const showLogin = error.kind === "unauthenticated" && loginHref;
+  const secondaryHref = error.kind === "validation" || error.kind === "notFound" ? fallbackHref : "/calendar";
 
   return (
     <Card className="border-destructive/50 bg-destructive/5">
@@ -42,16 +38,16 @@ export const PlantEditErrorState = ({ error, onRetry, loginHref }: PlantEditErro
           </Button>
         ) : null}
         {showRetry && onRetry ? (
-          <Button onClick={onRetry} variant={showLogin ? 'outline' : 'default'}>
+          <Button onClick={onRetry} variant={showLogin ? "outline" : "default"}>
             Spróbuj ponownie
           </Button>
         ) : null}
         <Button asChild variant="outline">
-          <a href={secondaryHref}>{error.kind === 'notFound' ? 'Wróć do roślin' : 'Przejdź do kalendarza'}</a>
+          <a href={secondaryHref}>{error.kind === "notFound" ? "Wróć do roślin" : "Przejdź do kalendarza"}</a>
         </Button>
       </CardFooter>
     </Card>
-  )
-}
+  );
+};
 
-PlantEditErrorState.displayName = 'PlantEditErrorState'
+PlantEditErrorState.displayName = "PlantEditErrorState";

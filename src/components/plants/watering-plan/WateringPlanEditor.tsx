@@ -1,74 +1,63 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { FC } from 'react'
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { FC } from "react";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
-import { InlineAlertArea } from '@/components/plants/watering-plan/InlineAlertArea'
-import { WateringPlanForm } from '@/components/plants/watering-plan/WateringPlanForm'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { InlineAlertArea } from "@/components/plants/watering-plan/InlineAlertArea";
+import { WateringPlanForm } from "@/components/plants/watering-plan/WateringPlanForm";
 import type {
   SetPlanErrorVm,
   WateringPlanFormErrors,
   WateringPlanFormValues,
   WateringPlanFormField,
-} from '@/components/plants/watering-plan/types'
-import { validateWateringPlanForm } from '@/components/plants/watering-plan/view-model'
+} from "@/components/plants/watering-plan/types";
+import { validateWateringPlanForm } from "@/components/plants/watering-plan/view-model";
 
-export type WateringPlanEditorMode = 'ai_edit' | 'manual'
+export type WateringPlanEditorMode = "ai_edit" | "manual";
 
-export type WateringPlanEditorProps = {
-  mode: WateringPlanEditorMode
-  initialValues: WateringPlanFormValues
-  isSaving: boolean
-  saveError?: SetPlanErrorVm | null
-  onSubmit: (values: WateringPlanFormValues) => void
-  onBack: () => void
-  onDismissError?: () => void
+export interface WateringPlanEditorProps {
+  mode: WateringPlanEditorMode;
+  initialValues: WateringPlanFormValues;
+  isSaving: boolean;
+  saveError?: SetPlanErrorVm | null;
+  onSubmit: (values: WateringPlanFormValues) => void;
+  onBack: () => void;
+  onDismissError?: () => void;
 }
 
-const DEFAULT_FORM_ERRORS: WateringPlanFormErrors = { fieldErrors: {} }
+const DEFAULT_FORM_ERRORS: WateringPlanFormErrors = { fieldErrors: {} };
 
 const SERVER_FIELD_MAP: Record<string, WateringPlanFormField> = {
-  interval_days: 'interval_days',
-  start_from: 'start_from',
-  custom_start_on: 'custom_start_on',
-  horizon_days: 'horizon_days',
-  schedule_basis: 'schedule_basis',
-  overdue_policy: 'overdue_policy',
-  form: 'form',
-}
+  interval_days: "interval_days",
+  start_from: "start_from",
+  custom_start_on: "custom_start_on",
+  horizon_days: "horizon_days",
+  schedule_basis: "schedule_basis",
+  overdue_policy: "overdue_policy",
+  form: "form",
+};
 
-const mapServerFieldErrors = (
-  source?: Record<string, string[]>,
-): WateringPlanFormErrors['fieldErrors'] => {
-  if (!source) return {}
-  const mapped: WateringPlanFormErrors['fieldErrors'] = {}
+const mapServerFieldErrors = (source?: Record<string, string[]>): WateringPlanFormErrors["fieldErrors"] => {
+  if (!source) return {};
+  const mapped: WateringPlanFormErrors["fieldErrors"] = {};
   for (const [field, messages] of Object.entries(source)) {
-    if (!Array.isArray(messages) || messages.length === 0) continue
-    const key = SERVER_FIELD_MAP[field] ?? 'form'
-    const filtered = messages.filter((message): message is string => typeof message === 'string')
-    if (filtered.length === 0) continue
-    mapped[key] = filtered
+    if (!Array.isArray(messages) || messages.length === 0) continue;
+    const key = SERVER_FIELD_MAP[field] ?? "form";
+    const filtered = messages.filter((message): message is string => typeof message === "string");
+    if (filtered.length === 0) continue;
+    mapped[key] = filtered;
   }
-  return mapped
-}
+  return mapped;
+};
 
 const removeFieldErrorsForPatch = (
-  fieldErrors: WateringPlanFormErrors['fieldErrors'],
-  patch: Partial<WateringPlanFormValues>,
-): WateringPlanFormErrors['fieldErrors'] => {
-  const next = { ...fieldErrors }
-  for (const key of Object.keys(patch) as Array<keyof WateringPlanFormValues>) {
-    if (key in next) {
-      delete next[key as keyof WateringPlanFormErrors['fieldErrors']]
-    }
-  }
-  return next
-}
+  fieldErrors: WateringPlanFormErrors["fieldErrors"],
+  patch: Partial<WateringPlanFormValues>
+): WateringPlanFormErrors["fieldErrors"] => {
+  const keysToClear = new Set(Object.keys(patch));
+  return Object.fromEntries(
+    Object.entries(fieldErrors).filter(([key]) => !keysToClear.has(key))
+  ) as WateringPlanFormErrors["fieldErrors"];
+};
 
 export const WateringPlanEditor: FC<WateringPlanEditorProps> = ({
   mode,
@@ -79,30 +68,30 @@ export const WateringPlanEditor: FC<WateringPlanEditorProps> = ({
   onBack,
   onDismissError,
 }) => {
-  const [value, setValue] = useState<WateringPlanFormValues>(initialValues)
-  const [errors, setErrors] = useState<WateringPlanFormErrors>(DEFAULT_FORM_ERRORS)
+  const [value, setValue] = useState<WateringPlanFormValues>(initialValues);
+  const [errors, setErrors] = useState<WateringPlanFormErrors>(DEFAULT_FORM_ERRORS);
 
   useEffect(() => {
-    setValue(initialValues)
-    setErrors(DEFAULT_FORM_ERRORS)
-  }, [initialValues])
+    setValue(initialValues);
+    setErrors(DEFAULT_FORM_ERRORS);
+  }, [initialValues]);
 
   const handleChange = useCallback((patch: Partial<WateringPlanFormValues>) => {
-    setValue((prev) => ({ ...prev, ...patch }))
+    setValue((prev) => ({ ...prev, ...patch }));
     setErrors((prev) => ({
       fieldErrors: removeFieldErrorsForPatch(prev.fieldErrors, patch),
       formError: undefined,
-    }))
-  }, [])
+    }));
+  }, []);
 
   const handleSubmit = useCallback(() => {
-    const validation = validateWateringPlanForm(value)
+    const validation = validateWateringPlanForm(value);
     if (Object.keys(validation.fieldErrors).length > 0) {
-      setErrors(validation)
-      return
+      setErrors(validation);
+      return;
     }
-    onSubmit(value)
-  }, [onSubmit, value])
+    onSubmit(value);
+  }, [onSubmit, value]);
 
   useEffect(() => {
     if (!saveError) {
@@ -112,28 +101,28 @@ export const WateringPlanEditor: FC<WateringPlanEditorProps> = ({
               ...prev,
               formError: undefined,
             }
-          : prev,
-      )
-      return
+          : prev
+      );
+      return;
     }
 
-    if (saveError.kind === 'validation') {
+    if (saveError.kind === "validation") {
       setErrors({
         fieldErrors: mapServerFieldErrors(saveError.fieldErrors),
         formError: saveError.message,
-      })
+      });
     }
-  }, [saveError])
+  }, [saveError]);
 
   const title = useMemo(() => {
-    return mode === 'ai_edit' ? 'Edytuj propozycję AI' : 'Ustaw plan ręcznie'
-  }, [mode])
+    return mode === "ai_edit" ? "Edytuj propozycję AI" : "Ustaw plan ręcznie";
+  }, [mode]);
 
   const description = useMemo(() => {
-    return mode === 'ai_edit'
-      ? 'Dostosuj szczegóły planu zaproponowanego przez AI, aby dopasować go do swoich potrzeb.'
-      : 'Skonfiguruj plan od podstaw, definiując interwały i zasady dla tej rośliny.'
-  }, [mode])
+    return mode === "ai_edit"
+      ? "Dostosuj szczegóły planu zaproponowanego przez AI, aby dopasować go do swoich potrzeb."
+      : "Skonfiguruj plan od podstaw, definiując interwały i zasady dla tej rośliny.";
+  }, [mode]);
 
   return (
     <Card>
@@ -153,8 +142,7 @@ export const WateringPlanEditor: FC<WateringPlanEditorProps> = ({
         />
       </CardContent>
     </Card>
-  )
-}
+  );
+};
 
-WateringPlanEditor.displayName = 'WateringPlanEditor'
-
+WateringPlanEditor.displayName = "WateringPlanEditor";

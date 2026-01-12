@@ -1,19 +1,16 @@
-import { Button } from '@/components/ui/button'
-import type { MonthPickerVm } from '@/lib/services/calendar/month-view-model'
-import { cn } from '@/lib/utils'
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from "@/components/ui/button";
+import type { MonthPickerVm } from "@/lib/services/calendar/month-view-model";
+import { cn } from "@/lib/utils";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 
-type MonthPickerProps = {
-  vm: MonthPickerVm
-  className?: string
+interface MonthPickerProps {
+  vm: MonthPickerVm;
+  className?: string;
 }
 
 export const MonthPicker = ({ vm, className }: MonthPickerProps) => (
   <section
-    className={cn(
-      'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between',
-      className,
-    )}
+    className={cn("flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between", className)}
     aria-label="Nawigacja po miesiącach kalendarza"
   >
     <div className="flex items-center justify-between gap-2 sm:justify-start">
@@ -71,6 +68,6 @@ export const MonthPicker = ({ vm, className }: MonthPickerProps) => (
       </Button>
     )}
   </section>
-)
+);
 
-MonthPicker.displayName = 'MonthPicker'
+MonthPicker.displayName = "MonthPicker";

@@ -1,9 +1,9 @@
-import type { FC } from 'react'
+import type { FC } from "react";
 
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 
-export type PlantDetailHeaderProps = {
-  backHref: string
+export interface PlantDetailHeaderProps {
+  backHref: string;
 }
 
 export const PlantDetailHeader: FC<PlantDetailHeaderProps> = ({ backHref }) => (
@@ -16,7 +16,6 @@ export const PlantDetailHeader: FC<PlantDetailHeaderProps> = ({ backHref }) => (
       <a href={backHref}>← Powrót</a>
     </Button>
   </header>
-)
+);
 
-PlantDetailHeader.displayName = 'PlantDetailHeader'
-
+PlantDetailHeader.displayName = "PlantDetailHeader";

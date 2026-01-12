@@ -1,364 +1,349 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from "react";
 
-import type { CalendarDayTaskVm } from '@/lib/services/calendar/day-view-model'
-import type {
-  AdhocWateringCommand,
-  UpdateWateringTaskCommand,
-} from '@/types'
-import { createAdhocWateringEntry } from '@/lib/services/watering-tasks/adhoc-client'
+import type { CalendarDayTaskVm } from "@/lib/services/calendar/day-view-model";
+import type { AdhocWateringCommand, UpdateWateringTaskCommand } from "@/types";
+import { createAdhocWateringEntry } from "@/lib/services/watering-tasks/adhoc-client";
 import {
   deleteWateringTask,
   updateWateringTask,
   WateringTaskApiError,
   type WateringTaskApiErrorKind,
-} from '@/lib/services/watering-tasks/watering-task-client'
-import { invalidateCalendarDayCacheByDate } from './use-calendar-day'
-import { invalidateCalendarMonthCacheByMonth } from './use-calendar-month'
+} from "@/lib/services/watering-tasks/watering-task-client";
+import { invalidateCalendarDayCacheByDate } from "./use-calendar-day";
+import { invalidateCalendarMonthCacheByMonth } from "./use-calendar-month";
 
-type MutationErrorKind = WateringTaskApiErrorKind | 'unknown'
+type MutationErrorKind = WateringTaskApiErrorKind | "unknown";
 
-export type WateringTaskMutationError = {
-  kind: MutationErrorKind
-  message: string
-  code?: string
-  fieldErrors?: Record<string, string[]>
-  details?: unknown
-  taskId?: string
-  plantId?: string
+export interface WateringTaskMutationError {
+  kind: MutationErrorKind;
+  message: string;
+  code?: string;
+  fieldErrors?: Record<string, string[]>;
+  details?: unknown;
+  taskId?: string;
+  plantId?: string;
 }
 
-type UseWateringTaskMutationsParams = {
-  date: string
-  onReload?: () => void
+interface UseWateringTaskMutationsParams {
+  date: string;
+  onReload?: () => void;
 }
 
-type PendingMap = Record<string, boolean>
-type OptimisticMap = Record<string, CalendarDayTaskVm>
+type PendingMap = Record<string, boolean>;
+type OptimisticMap = Record<string, CalendarDayTaskVm>;
 
-const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-const collectInvalidationDates = (
-  baseDate: string,
-  ...candidates: Array<string | null | undefined>
-): string[] => {
-  const dates = new Set<string>()
+const collectInvalidationDates = (baseDate: string, ...candidates: (string | null | undefined)[]): string[] => {
+  const dates = new Set<string>();
   if (ISO_DATE_PATTERN.test(baseDate)) {
-    dates.add(baseDate)
+    dates.add(baseDate);
   }
   for (const candidate of candidates) {
-    if (typeof candidate === 'string' && ISO_DATE_PATTERN.test(candidate)) {
-      dates.add(candidate)
+    if (typeof candidate === "string" && ISO_DATE_PATTERN.test(candidate)) {
+      dates.add(candidate);
     }
   }
-  return Array.from(dates)
-}
+  return Array.from(dates);
+};
 
-const extractFieldErrors = (
-  details: unknown,
-): Record<string, string[]> | undefined => {
-  if (!details || typeof details !== 'object') return undefined
-  const issues = (details as { issues?: unknown }).issues
+const extractFieldErrors = (details: unknown): Record<string, string[]> | undefined => {
+  if (!details || typeof details !== "object") return undefined;
+  const issues = (details as { issues?: unknown }).issues;
 
-  if (!Array.isArray(issues)) return undefined
-  const result: Record<string, string[]> = {}
+  if (!Array.isArray(issues)) return undefined;
+  const result: Record<string, string[]> = {};
   for (const issue of issues) {
-    if (!issue || typeof issue !== 'object') continue
-    const path = Array.isArray((issue as { path?: unknown }).path)
-      ? ((issue as { path?: string[] }).path ?? [])
-      : []
-    const key = path.join('.') || (issue as { path?: string }).path || 'form'
-    const message = (issue as { message?: string }).message
-    if (!message) continue
+    if (!issue || typeof issue !== "object") continue;
+    const path = Array.isArray((issue as { path?: unknown }).path) ? ((issue as { path?: string[] }).path ?? []) : [];
+    const key = path.join(".") || (issue as { path?: string }).path || "form";
+    const message = (issue as { message?: string }).message;
+    if (!message) continue;
     if (!result[key]) {
-      result[key] = []
+      result[key] = [];
     }
-    result[key]?.push(message)
+    result[key]?.push(message);
   }
 
-  return Object.keys(result).length > 0 ? result : undefined
-}
+  return Object.keys(result).length > 0 ? result : undefined;
+};
 
 const extractPlantIdFromDetails = (details: unknown): string | undefined => {
-  if (!details || typeof details !== 'object') return undefined
-  const value = (details as { plant_id?: unknown }).plant_id
-  return typeof value === 'string' ? value : undefined
-}
+  if (!details || typeof details !== "object") return undefined;
+  const value = (details as { plant_id?: unknown }).plant_id;
+  return typeof value === "string" ? value : undefined;
+};
 
 const mapApiError = (
   error: unknown,
-  overrides?: Pick<WateringTaskMutationError, 'taskId' | 'plantId'>,
+  overrides?: Pick<WateringTaskMutationError, "taskId" | "plantId">
 ): WateringTaskMutationError => {
   if (error instanceof WateringTaskApiError) {
-    const detailPlantId = extractPlantIdFromDetails(error.details)
+    const detailPlantId = extractPlantIdFromDetails(error.details);
     const mapped: WateringTaskMutationError = {
       kind: error.kind,
       message: error.message,
       code: error.code,
       details: error.details,
-      fieldErrors: error.kind === 'validation' ? extractFieldErrors(error.details) : undefined,
+      fieldErrors: error.kind === "validation" ? extractFieldErrors(error.details) : undefined,
       ...overrides,
-    }
+    };
     if (!mapped.plantId && detailPlantId) {
-      mapped.plantId = detailPlantId
+      mapped.plantId = detailPlantId;
     }
-    return mapped
+    return mapped;
   }
 
   return {
-    kind: 'unknown',
-    message: error instanceof Error ? error.message : 'Unknown error',
+    kind: "unknown",
+    message: error instanceof Error ? error.message : "Unknown error",
     ...overrides,
-  }
-}
+  };
+};
 
-const markTaskCompleted = (
-  task: CalendarDayTaskVm,
-  completedOn: string,
-): CalendarDayTaskVm => ({
+const markTaskCompleted = (task: CalendarDayTaskVm, completedOn: string): CalendarDayTaskVm => ({
   ...task,
-  status: 'completed',
+  status: "completed",
   completedOn,
-})
+});
 
 const markTaskPending = (task: CalendarDayTaskVm): CalendarDayTaskVm => ({
   ...task,
-  status: 'pending',
+  status: "pending",
   completedOn: null,
-})
+});
 
 const clearMonthCachesForDate = (date: string): void => {
-  const month = date.slice(0, 7)
-  invalidateCalendarMonthCacheByMonth(month)
-}
+  const month = date.slice(0, 7);
+  invalidateCalendarMonthCacheByMonth(month);
+};
 
-export const useWateringTaskMutations = ({
-  date,
-  onReload,
-}: UseWateringTaskMutationsParams) => {
-  const [pendingByTaskId, setPendingByTaskId] = useState<PendingMap>({})
-  const [globalPending, setGlobalPending] = useState(false)
-  const [optimisticTasks, setOptimisticTasks] = useState<OptimisticMap>({})
-  const [error, setError] = useState<WateringTaskMutationError | null>(null)
+export const useWateringTaskMutations = ({ date, onReload }: UseWateringTaskMutationsParams) => {
+  const [pendingByTaskId, setPendingByTaskId] = useState<PendingMap>({});
+  const [globalPending, setGlobalPending] = useState(false);
+  const [optimisticTasks, setOptimisticTasks] = useState<OptimisticMap>({});
+  const [error, setError] = useState<WateringTaskMutationError | null>(null);
 
-  const optimisticSnapshots = useRef(new Map<string, CalendarDayTaskVm>())
+  const optimisticSnapshots = useRef(new Map<string, CalendarDayTaskVm>());
 
-  const setTaskPending = useCallback((taskId: string, isPending: boolean) => {
-    setPendingByTaskId((prev) => {
-      if (isPending) {
-        if (prev[taskId]) return prev
-        return { ...prev, [taskId]: true }
-      }
+  const omitKey = useCallback(<TMap extends Record<string, unknown>>(source: TMap, key: string): TMap => {
+    if (!Object.prototype.hasOwnProperty.call(source, key)) return source;
+    return Object.fromEntries(Object.entries(source).filter(([entryKey]) => entryKey !== key)) as TMap;
+  }, []);
 
-      if (!prev[taskId]) return prev
-      const next = { ...prev }
-      delete next[taskId]
-      return next
-    })
-  }, [])
+  const setTaskPending = useCallback(
+    (taskId: string, isPending: boolean) => {
+      setPendingByTaskId((prev) => {
+        if (isPending) {
+          if (prev[taskId]) return prev;
+          return { ...prev, [taskId]: true };
+        }
+
+        if (!prev[taskId]) return prev;
+        return omitKey(prev as Record<string, unknown>, taskId) as PendingMap;
+      });
+    },
+    [omitKey]
+  );
 
   const applyOptimisticTask = useCallback(
     (taskId: string, nextTask: CalendarDayTaskVm, original: CalendarDayTaskVm) => {
-      optimisticSnapshots.current.set(taskId, original)
-      setOptimisticTasks((prev) => ({ ...prev, [taskId]: nextTask }))
+      optimisticSnapshots.current.set(taskId, original);
+      setOptimisticTasks((prev) => ({ ...prev, [taskId]: nextTask }));
     },
-    [],
-  )
+    []
+  );
 
-  const rollbackOptimisticTask = useCallback((taskId: string) => {
-    setOptimisticTasks((prev) => {
-      if (!prev[taskId]) return prev
-      const next = { ...prev }
-      delete next[taskId]
-      return next
-    })
-    optimisticSnapshots.current.delete(taskId)
-  }, [])
+  const rollbackOptimisticTask = useCallback(
+    (taskId: string) => {
+      setOptimisticTasks((prev) => {
+        if (!prev[taskId]) return prev;
+        return omitKey(prev as Record<string, unknown>, taskId) as OptimisticMap;
+      });
+      optimisticSnapshots.current.delete(taskId);
+    },
+    [omitKey]
+  );
 
-  const clearOptimisticTask = useCallback((taskId: string) => {
-    setOptimisticTasks((prev) => {
-      if (!prev[taskId]) return prev
-      const next = { ...prev }
-      delete next[taskId]
-      return next
-    })
-    optimisticSnapshots.current.delete(taskId)
-  }, [])
+  const clearOptimisticTask = useCallback(
+    (taskId: string) => {
+      setOptimisticTasks((prev) => {
+        if (!prev[taskId]) return prev;
+        return omitKey(prev as Record<string, unknown>, taskId) as OptimisticMap;
+      });
+      optimisticSnapshots.current.delete(taskId);
+    },
+    [omitKey]
+  );
 
   const acknowledgeServerState = useCallback((tasks: CalendarDayTaskVm[] = []) => {
-    if (tasks.length === 0) return
+    if (tasks.length === 0) return;
 
     setOptimisticTasks((prev) => {
-      if (Object.keys(prev).length === 0) return prev
-      const next = { ...prev }
-      let changed = false
+      if (Object.keys(prev).length === 0) return prev;
+      const idsToClear = new Set(tasks.map((task) => task.id));
+      const next = Object.fromEntries(
+        Object.entries(prev).filter(([taskId]) => !idsToClear.has(taskId))
+      ) as OptimisticMap;
       for (const task of tasks) {
-        if (next[task.id]) {
-          delete next[task.id]
-          changed = true
-        }
-        optimisticSnapshots.current.delete(task.id)
+        optimisticSnapshots.current.delete(task.id);
       }
-      return changed ? next : prev
-    })
-  }, [])
+      return Object.keys(next).length === Object.keys(prev).length ? prev : next;
+    });
+  }, []);
 
   const invalidateCachesForDates = useCallback((dates: string[]) => {
     dates.forEach((targetDate) => {
-      invalidateCalendarDayCacheByDate(targetDate)
-      clearMonthCachesForDate(targetDate)
-    })
-  }, [])
+      invalidateCalendarDayCacheByDate(targetDate);
+      clearMonthCachesForDate(targetDate);
+    });
+  }, []);
 
   const invalidateCachesAndReload = useCallback(
     (dates: string[] = [date]) => {
-      invalidateCachesForDates(dates)
-      onReload?.()
+      invalidateCachesForDates(dates);
+      onReload?.();
     },
-    [date, invalidateCachesForDates, onReload],
-  )
+    [date, invalidateCachesForDates, onReload]
+  );
 
   const runTaskMutation = useCallback(
     async (
       task: CalendarDayTaskVm,
       executor: () => Promise<unknown>,
       options?: {
-        optimistic?: CalendarDayTaskVm
-        rollbackOnError?: boolean
-      },
+        optimistic?: CalendarDayTaskVm;
+        rollbackOnError?: boolean;
+      }
     ) => {
-      const optimistic = options?.optimistic
-      const rollbackOnError = options?.rollbackOnError ?? true
+      const optimistic = options?.optimistic;
+      const rollbackOnError = options?.rollbackOnError ?? true;
 
-      setError(null)
-      setTaskPending(task.id, true)
+      setError(null);
+      setTaskPending(task.id, true);
 
       if (optimistic) {
-        applyOptimisticTask(task.id, optimistic, task)
+        applyOptimisticTask(task.id, optimistic, task);
       }
 
       try {
-        await executor()
-        invalidateCachesAndReload()
+        await executor();
+        invalidateCachesAndReload();
       } catch (err) {
         if (optimistic && rollbackOnError) {
-          rollbackOptimisticTask(task.id)
+          rollbackOptimisticTask(task.id);
         }
-        setError(mapApiError(err, { taskId: task.id }))
-        throw err
+        setError(mapApiError(err, { taskId: task.id }));
+        throw err;
       } finally {
-        setTaskPending(task.id, false)
+        setTaskPending(task.id, false);
       }
     },
-    [
-      applyOptimisticTask,
-      invalidateCachesAndReload,
-      rollbackOptimisticTask,
-      setTaskPending,
-    ],
-  )
+    [applyOptimisticTask, invalidateCachesAndReload, rollbackOptimisticTask, setTaskPending]
+  );
 
   const confirmTask = useCallback(
     async (task: CalendarDayTaskVm) => {
-      if (pendingByTaskId[task.id] || task.status !== 'pending') return
+      if (pendingByTaskId[task.id] || task.status !== "pending") return;
 
-      const optimisticTask = markTaskCompleted(task, date)
+      const optimisticTask = markTaskCompleted(task, date);
 
       await runTaskMutation(
         task,
         async () => {
           await updateWateringTask(task.id, {
-            status: 'completed',
+            status: "completed",
             completed_on: date,
-          })
+          });
         },
-        { optimistic: optimisticTask },
-      )
+        { optimistic: optimisticTask }
+      );
     },
-    [date, pendingByTaskId, runTaskMutation],
-  )
+    [date, pendingByTaskId, runTaskMutation]
+  );
 
   const undoTask = useCallback(
     async (task: CalendarDayTaskVm) => {
-      if (pendingByTaskId[task.id] || task.status !== 'completed' || !task.isScheduled) {
-        return
+      if (pendingByTaskId[task.id] || task.status !== "completed" || !task.isScheduled) {
+        return;
       }
 
-      const optimisticTask = markTaskPending(task)
+      const optimisticTask = markTaskPending(task);
 
       await runTaskMutation(
         task,
         async () => {
           await updateWateringTask(task.id, {
-            status: 'pending',
-          })
+            status: "pending",
+          });
         },
-        { optimistic: optimisticTask },
-      )
+        { optimistic: optimisticTask }
+      );
     },
-    [pendingByTaskId, runTaskMutation],
-  )
+    [pendingByTaskId, runTaskMutation]
+  );
 
   const editTask = useCallback(
     async (task: CalendarDayTaskVm, command: UpdateWateringTaskCommand) => {
-      setError(null)
-      setTaskPending(task.id, true)
+      setError(null);
+      setTaskPending(task.id, true);
       try {
-        await updateWateringTask(task.id, command)
+        await updateWateringTask(task.id, command);
         const datesToInvalidate = collectInvalidationDates(
           date,
           task.completedOn ?? null,
-          command.completed_on ?? null,
-        )
-        invalidateCachesAndReload(datesToInvalidate)
+          command.completed_on ?? null
+        );
+        invalidateCachesAndReload(datesToInvalidate);
       } catch (err) {
-        setError(mapApiError(err, { taskId: task.id }))
-        throw err
+        setError(mapApiError(err, { taskId: task.id }));
+        throw err;
       } finally {
-        setTaskPending(task.id, false)
+        setTaskPending(task.id, false);
       }
     },
-    [date, invalidateCachesAndReload, setTaskPending],
-  )
+    [date, invalidateCachesAndReload, setTaskPending]
+  );
 
   const deleteTaskMutation = useCallback(
     async (task: CalendarDayTaskVm) => {
-      setError(null)
-      setTaskPending(task.id, true)
+      setError(null);
+      setTaskPending(task.id, true);
       try {
-        await deleteWateringTask(task.id)
-        invalidateCachesAndReload()
+        await deleteWateringTask(task.id);
+        invalidateCachesAndReload();
       } catch (err) {
-        setError(mapApiError(err, { taskId: task.id }))
-        throw err
+        setError(mapApiError(err, { taskId: task.id }));
+        throw err;
       } finally {
-        setTaskPending(task.id, false)
+        setTaskPending(task.id, false);
       }
     },
-    [invalidateCachesAndReload, setTaskPending],
-  )
+    [invalidateCachesAndReload, setTaskPending]
+  );
 
   const createAdhocMutation = useCallback(
     async (plantId: string, command: AdhocWateringCommand) => {
-      setError(null)
-      setGlobalPending(true)
+      setError(null);
+      setGlobalPending(true);
       try {
-        await createAdhocWateringEntry(plantId, command)
-        const datesToInvalidate = collectInvalidationDates(date, command.completed_on ?? null)
-        invalidateCachesAndReload(datesToInvalidate)
+        await createAdhocWateringEntry(plantId, command);
+        const datesToInvalidate = collectInvalidationDates(date, command.completed_on ?? null);
+        invalidateCachesAndReload(datesToInvalidate);
       } catch (err) {
-        setError(mapApiError(err, { plantId }))
-        throw err
+        setError(mapApiError(err, { plantId }));
+        throw err;
       } finally {
-        setGlobalPending(false)
+        setGlobalPending(false);
       }
     },
-    [invalidateCachesAndReload],
-  )
+    [date, invalidateCachesAndReload]
+  );
 
-  const clearError = useCallback(() => setError(null), [])
+  const clearError = useCallback(() => setError(null), []);
 
-  const optimisticItems = useMemo(() => optimisticTasks, [optimisticTasks])
-  const pendingTaskMap = useMemo(() => pendingByTaskId, [pendingByTaskId])
+  const optimisticItems = useMemo(() => optimisticTasks, [optimisticTasks]);
+  const pendingTaskMap = useMemo(() => pendingByTaskId, [pendingByTaskId]);
 
   return {
     pendingByTaskId: pendingTaskMap,
@@ -373,7 +358,7 @@ export const useWateringTaskMutations = ({
     clearError,
     acknowledgeServerState,
     clearOptimisticTask,
-  }
-}
+  };
+};
 
-useWateringTaskMutations.displayName = 'useWateringTaskMutations'
+useWateringTaskMutations.displayName = "useWateringTaskMutations";

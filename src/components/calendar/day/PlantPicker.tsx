@@ -1,30 +1,30 @@
-import { useMemo } from 'react'
+import { useId, useMemo } from "react";
 
-import { Button } from '@/components/ui/button'
-import type { PlantListItemDto } from '@/types'
-import { usePlantSearch } from '@/components/hooks/use-plant-search'
+import { Button } from "@/components/ui/button";
+import type { PlantListItemDto } from "@/types";
+import { usePlantSearch } from "@/components/hooks/use-plant-search";
 
-type PlantPickerProps = {
-  value: PlantListItemDto | null
-  onChange: (next: PlantListItemDto | null) => void
-  disabled?: boolean
+interface PlantPickerProps {
+  value: PlantListItemDto | null;
+  onChange: (next: PlantListItemDto | null) => void;
+  disabled?: boolean;
+  inputId?: string;
 }
 
-export const PlantPicker = ({ value, onChange, disabled }: PlantPickerProps) => {
+export const PlantPicker = ({ value, onChange, disabled, inputId }: PlantPickerProps) => {
   const { query, setQuery, results, isLoading, error, clear } = usePlantSearch({
     limit: 8,
     debounceMs: 350,
-  })
+  });
+  const fallbackInputId = useId();
+  const resolvedInputId = inputId ?? fallbackInputId;
 
-  const showResults = useMemo(
-    () => !value && query.trim().length >= 2,
-    [query, value],
-  )
+  const showResults = useMemo(() => !value && query.trim().length >= 2, [query, value]);
 
   const handleSelect = (plant: PlantListItemDto) => {
-    onChange(plant)
-    clear()
-  }
+    onChange(plant);
+    clear();
+  };
 
   if (value) {
     return (
@@ -42,16 +42,14 @@ export const PlantPicker = ({ value, onChange, disabled }: PlantPickerProps) => 
           Wybierz inną roślinę
         </Button>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-2">
       <div className="space-y-1">
-        <label className="text-sm font-medium text-foreground">
-          Znajdź roślinę (min. 2 znaki)
-        </label>
         <input
+          id={resolvedInputId}
           type="text"
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           value={query}
@@ -75,9 +73,7 @@ export const PlantPicker = ({ value, onChange, disabled }: PlantPickerProps) => 
                     disabled={disabled}
                   >
                     <span className="font-medium text-foreground">{plant.display_name}</span>
-                    {plant.nickname && (
-                      <span className="text-xs text-muted-foreground">{plant.nickname}</span>
-                    )}
+                    {plant.nickname && <span className="text-xs text-muted-foreground">{plant.nickname}</span>}
                   </button>
                 </li>
               ))
@@ -89,7 +85,7 @@ export const PlantPicker = ({ value, onChange, disabled }: PlantPickerProps) => 
       {isLoading && <p className="text-xs text-muted-foreground">Ładowanie wyników…</p>}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
-  )
-}
+  );
+};
 
-PlantPicker.displayName = 'PlantPicker'
+PlantPicker.displayName = "PlantPicker";

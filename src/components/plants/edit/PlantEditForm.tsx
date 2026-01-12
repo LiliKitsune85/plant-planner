@@ -1,51 +1,46 @@
-import { useCallback } from 'react'
-import type { ChangeEvent, FormEvent } from 'react'
+import { useCallback } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
-import type {
-  PlantEditDirtyState,
-  PlantEditFormErrors,
-  PlantEditFormValues,
-} from './types'
+import type { PlantEditDirtyState, PlantEditFormErrors, PlantEditFormValues } from "./types";
 
 const FIELD_METADATA = {
   speciesName: {
-    label: 'Nazwa gatunku',
-    description: 'Pole jest tylko do odczytu w MVP.',
+    label: "Nazwa gatunku",
+    description: "Pole jest tylko do odczytu w MVP.",
   },
   nickname: {
-    label: 'Pseudonim (opcjonalnie)',
-    description: 'Pomaga rozróżnić rośliny tego samego gatunku.',
+    label: "Pseudonim (opcjonalnie)",
+    description: "Pomaga rozróżnić rośliny tego samego gatunku.",
   },
   description: {
-    label: 'Opis (opcjonalnie)',
-    description: 'Dowolne notatki o pielęgnacji, obserwacjach itp.',
+    label: "Opis (opcjonalnie)",
+    description: "Dowolne notatki o pielęgnacji, obserwacjach itp.",
   },
   purchaseDate: {
-    label: 'Data zakupu (opcjonalnie)',
-    description: 'Format RRRR-MM-DD. Ułatwia śledzenie historii rośliny.',
+    label: "Data zakupu (opcjonalnie)",
+    description: "Format RRRR-MM-DD. Ułatwia śledzenie historii rośliny.",
   },
   photoPath: {
-    label: 'Ścieżka do zdjęcia (opcjonalnie)',
-    description:
-      'Wklej względną ścieżkę z magazynu (bez http/https, bez wiodącego ukośnika).',
+    label: "Ścieżka do zdjęcia (opcjonalnie)",
+    description: "Wklej względną ścieżkę z magazynu (bez http/https, bez wiodącego ukośnika).",
   },
-} as const
+} as const;
 
-const buildErrorId = (field: string) => `plant-edit-${field}-errors`
+const buildErrorId = (field: string) => `plant-edit-${field}-errors`;
 
-type PlantEditFormProps = {
-  values: PlantEditFormValues
-  errors: PlantEditFormErrors
-  pending: boolean
-  dirtyState: PlantEditDirtyState
-  onChange: (patch: Partial<PlantEditFormValues>) => void
-  onSubmit: () => void
-  onCancel: () => void
+interface PlantEditFormProps {
+  values: PlantEditFormValues;
+  errors: PlantEditFormErrors;
+  pending: boolean;
+  dirtyState: PlantEditDirtyState;
+  onChange: (patch: Partial<PlantEditFormValues>) => void;
+  onSubmit: () => void;
+  onCancel: () => void;
 }
 
 export const PlantEditForm = ({
@@ -59,23 +54,22 @@ export const PlantEditForm = ({
 }: PlantEditFormProps) => {
   const handleSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault()
-      if (pending) return
-      onSubmit()
+      event.preventDefault();
+      if (pending) return;
+      onSubmit();
     },
-    [onSubmit, pending],
-  )
+    [onSubmit, pending]
+  );
 
   const handleFieldChange = useCallback(
-    (field: keyof PlantEditFormValues) =>
-      (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        onChange({ [field]: event.target.value })
-      },
-    [onChange],
-  )
+    (field: keyof PlantEditFormValues) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      onChange({ [field]: event.target.value });
+    },
+    [onChange]
+  );
 
-  const fieldErrors = errors.fields ?? {}
-  const canSubmit = dirtyState.isDirty && !pending
+  const fieldErrors = errors.fields ?? {};
+  const canSubmit = dirtyState.isDirty && !pending;
 
   return (
     <form className="space-y-6" onSubmit={handleSubmit} noValidate>
@@ -110,17 +104,15 @@ export const PlantEditForm = ({
             id="nickname"
             name="nickname"
             value={values.nickname}
-            onChange={handleFieldChange('nickname')}
+            onChange={handleFieldChange("nickname")}
             disabled={pending}
             aria-invalid={Boolean(fieldErrors.nickname?.length)}
-            aria-describedby={
-              fieldErrors.nickname?.length ? buildErrorId('nickname') : undefined
-            }
+            aria-describedby={fieldErrors.nickname?.length ? buildErrorId("nickname") : undefined}
           />
           <p className="text-sm text-muted-foreground">{FIELD_METADATA.nickname.description}</p>
           {fieldErrors.nickname?.length ? (
-            <p id={buildErrorId('nickname')} className="text-sm text-destructive">
-              {fieldErrors.nickname.join(' ')}
+            <p id={buildErrorId("nickname")} className="text-sm text-destructive">
+              {fieldErrors.nickname.join(" ")}
             </p>
           ) : null}
         </div>
@@ -132,19 +124,15 @@ export const PlantEditForm = ({
             name="description"
             rows={5}
             value={values.description}
-            onChange={handleFieldChange('description')}
+            onChange={handleFieldChange("description")}
             disabled={pending}
             aria-invalid={Boolean(fieldErrors.description?.length)}
-            aria-describedby={
-              fieldErrors.description?.length ? buildErrorId('description') : undefined
-            }
+            aria-describedby={fieldErrors.description?.length ? buildErrorId("description") : undefined}
           />
-          <p className="text-sm text-muted-foreground">
-            {FIELD_METADATA.description.description}
-          </p>
+          <p className="text-sm text-muted-foreground">{FIELD_METADATA.description.description}</p>
           {fieldErrors.description?.length ? (
-            <p id={buildErrorId('description')} className="text-sm text-destructive">
-              {fieldErrors.description.join(' ')}
+            <p id={buildErrorId("description")} className="text-sm text-destructive">
+              {fieldErrors.description.join(" ")}
             </p>
           ) : null}
         </div>
@@ -156,19 +144,15 @@ export const PlantEditForm = ({
             name="purchaseDate"
             type="date"
             value={values.purchaseDate}
-            onChange={handleFieldChange('purchaseDate')}
+            onChange={handleFieldChange("purchaseDate")}
             disabled={pending}
             aria-invalid={Boolean(fieldErrors.purchase_date?.length)}
-            aria-describedby={
-              fieldErrors.purchase_date?.length ? buildErrorId('purchase_date') : undefined
-            }
+            aria-describedby={fieldErrors.purchase_date?.length ? buildErrorId("purchase_date") : undefined}
           />
-          <p className="text-sm text-muted-foreground">
-            {FIELD_METADATA.purchaseDate.description}
-          </p>
+          <p className="text-sm text-muted-foreground">{FIELD_METADATA.purchaseDate.description}</p>
           {fieldErrors.purchase_date?.length ? (
-            <p id={buildErrorId('purchase_date')} className="text-sm text-destructive">
-              {fieldErrors.purchase_date.join(' ')}
+            <p id={buildErrorId("purchase_date")} className="text-sm text-destructive">
+              {fieldErrors.purchase_date.join(" ")}
             </p>
           ) : null}
         </div>
@@ -179,19 +163,15 @@ export const PlantEditForm = ({
             id="photoPath"
             name="photoPath"
             value={values.photoPath}
-            onChange={handleFieldChange('photoPath')}
+            onChange={handleFieldChange("photoPath")}
             disabled={pending}
             aria-invalid={Boolean(fieldErrors.photo_path?.length)}
-            aria-describedby={
-              fieldErrors.photo_path?.length ? buildErrorId('photo_path') : undefined
-            }
+            aria-describedby={fieldErrors.photo_path?.length ? buildErrorId("photo_path") : undefined}
           />
-          <p className="text-sm text-muted-foreground">
-            {FIELD_METADATA.photoPath.description}
-          </p>
+          <p className="text-sm text-muted-foreground">{FIELD_METADATA.photoPath.description}</p>
           {fieldErrors.photo_path?.length ? (
-            <p id={buildErrorId('photo_path')} className="text-sm text-destructive">
-              {fieldErrors.photo_path.join(' ')}
+            <p id={buildErrorId("photo_path")} className="text-sm text-destructive">
+              {fieldErrors.photo_path.join(" ")}
             </p>
           ) : null}
         </div>
@@ -204,21 +184,15 @@ export const PlantEditForm = ({
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-          disabled={pending}
-          className="sm:min-w-[160px]"
-        >
+        <Button type="button" variant="outline" onClick={onCancel} disabled={pending} className="sm:min-w-[160px]">
           Anuluj
         </Button>
         <Button type="submit" disabled={!canSubmit} className="sm:min-w-[160px]">
-          {pending ? 'Zapisywanie…' : 'Zapisz zmiany'}
+          {pending ? "Zapisywanie…" : "Zapisz zmiany"}
         </Button>
       </div>
     </form>
-  )
-}
+  );
+};
 
-PlantEditForm.displayName = 'PlantEditForm'
+PlantEditForm.displayName = "PlantEditForm";

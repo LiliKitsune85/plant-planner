@@ -4,5 +4,4 @@ export {
   type SetWateringPlanResult,
   WateringPlanApiError as SetWateringPlanApiError,
   type WateringPlanApiErrorKind as SetWateringPlanApiErrorKind,
-} from './watering-plans-client'
-
+} from "./watering-plans-client";

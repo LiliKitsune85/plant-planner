@@ -1,15 +1,15 @@
-import type { FC } from 'react'
+import type { FC } from "react";
 
-import { Button } from '@/components/ui/button'
+import { Button } from "@/components/ui/button";
 
-export type PlantActionsBarProps = {
-  calendarHref: string
-  calendarLabel?: string
-  editHref: string
-  pendingWaterToday: boolean
-  pendingDelete: boolean
-  onWaterTodayClick: () => void
-  onDeleteClick: () => void
+export interface PlantActionsBarProps {
+  calendarHref: string;
+  calendarLabel?: string;
+  editHref: string;
+  pendingWaterToday: boolean;
+  pendingDelete: boolean;
+  onWaterTodayClick: () => void;
+  onDeleteClick: () => void;
 }
 
 export const PlantActionsBar: FC<PlantActionsBarProps> = ({
@@ -30,7 +30,7 @@ export const PlantActionsBar: FC<PlantActionsBarProps> = ({
         </a>
       </Button>
       <Button onClick={onWaterTodayClick} disabled={pendingWaterToday}>
-        {pendingWaterToday ? 'Zapisywanie…' : 'Podlej dzisiaj'}
+        {pendingWaterToday ? "Zapisywanie…" : "Podlej dzisiaj"}
       </Button>
       <Button asChild variant="secondary">
         <a href={editHref}>Edytuj</a>
@@ -40,7 +40,6 @@ export const PlantActionsBar: FC<PlantActionsBarProps> = ({
       </Button>
     </div>
   </section>
-)
+);
 
-PlantActionsBar.displayName = 'PlantActionsBar'
-
+PlantActionsBar.displayName = "PlantActionsBar";

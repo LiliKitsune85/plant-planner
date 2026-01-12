@@ -1,136 +1,131 @@
-import type { AuthFormSubmitResult } from '@/components/hooks/use-auth-form'
+import type { AuthFormSubmitResult } from "@/components/hooks/use-auth-form";
 
-type AuthDemoFieldErrors = Record<string, string[]>
+type AuthDemoFieldErrors = Record<string, string[]>;
 
 export type AuthDemoResult<TData = void> =
   | {
-      status: 'success'
-      message: string
-      data?: TData
+      status: "success";
+      message: string;
+      data?: TData;
     }
   | {
-      status: 'error'
-      code: AuthDemoErrorCode
-      message: string
-      fieldErrors?: AuthDemoFieldErrors
-    }
+      status: "error";
+      code: AuthDemoErrorCode;
+      message: string;
+      fieldErrors?: AuthDemoFieldErrors;
+    };
 
 type AuthDemoErrorCode =
-  | 'INVALID_CREDENTIALS'
-  | 'EMAIL_ALREADY_REGISTERED'
-  | 'PASSWORD_TOO_WEAK'
-  | 'RATE_LIMITED'
-  | 'INTERNAL_ERROR'
+  | "INVALID_CREDENTIALS"
+  | "EMAIL_ALREADY_REGISTERED"
+  | "PASSWORD_TOO_WEAK"
+  | "RATE_LIMITED"
+  | "INTERNAL_ERROR";
 
-export type SignInDemoPayload = {
-  email: string
-  password: string
-  returnTo?: string
+export interface SignInDemoPayload {
+  email: string;
+  password: string;
+  returnTo?: string;
 }
 
-export type SignUpDemoPayload = {
-  email: string
-  password: string
-  nickname?: string | null
-  timezone: string
-  returnTo?: string
+export interface SignUpDemoPayload {
+  email: string;
+  password: string;
+  nickname?: string | null;
+  timezone: string;
+  returnTo?: string;
 }
 
-export type ForgotPasswordDemoPayload = {
-  email: string
+export interface ForgotPasswordDemoPayload {
+  email: string;
 }
 
-export type ResetPasswordDemoPayload = {
-  password: string
+export interface ResetPasswordDemoPayload {
+  password: string;
 }
 
-const delay = (ms = 900) => new Promise((resolve) => setTimeout(resolve, ms))
+const delay = (ms = 900) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const buildSuccess = (message: string): AuthDemoResult => ({
-  status: 'success',
+  status: "success",
   message,
-})
+});
 
-const buildError = (
-  code: AuthDemoErrorCode,
-  message: string,
-  fieldErrors?: AuthDemoFieldErrors,
-): AuthDemoResult => ({
-  status: 'error',
+const buildError = (code: AuthDemoErrorCode, message: string, fieldErrors?: AuthDemoFieldErrors): AuthDemoResult => ({
+  status: "error",
   code,
   message,
   fieldErrors,
-})
+});
 
 export const authDemoClient = {
   async signIn(payload: SignInDemoPayload): Promise<AuthDemoResult> {
-    await delay()
-    if (matches(payload.email, 'limit')) {
-      return buildError('RATE_LIMITED', 'Zbyt wiele prób logowania. Odczekaj chwilę i spróbuj ponownie.')
+    await delay();
+    if (matches(payload.email, "limit")) {
+      return buildError("RATE_LIMITED", "Zbyt wiele prób logowania. Odczekaj chwilę i spróbuj ponownie.");
     }
-    if (matches(payload.email, 'wrong') || matches(payload.password, 'wrong')) {
-      return buildError('INVALID_CREDENTIALS', 'Nieprawidłowy e-mail lub hasło.', {
-        password: ['Hasło nie pasuje do wskazanego konta.'],
-      })
+    if (matches(payload.email, "wrong") || matches(payload.password, "wrong")) {
+      return buildError("INVALID_CREDENTIALS", "Nieprawidłowy e-mail lub hasło.", {
+        password: ["Hasło nie pasuje do wskazanego konta."],
+      });
     }
     return buildSuccess(
-      'Symulowane logowanie zakończone powodzeniem. Po podpięciu backendu nastąpi przekierowanie i ustawienie sesji.',
-    )
+      "Symulowane logowanie zakończone powodzeniem. Po podpięciu backendu nastąpi przekierowanie i ustawienie sesji."
+    );
   },
 
   async signUp(payload: SignUpDemoPayload): Promise<AuthDemoResult> {
-    await delay()
-    if (matches(payload.email, 'exists')) {
-      return buildError('EMAIL_ALREADY_REGISTERED', 'Konto z tym adresem e-mail już istnieje.', {
-        email: ['Użyj innego adresu lub przejdź do logowania.'],
-      })
+    await delay();
+    if (matches(payload.email, "exists")) {
+      return buildError("EMAIL_ALREADY_REGISTERED", "Konto z tym adresem e-mail już istnieje.", {
+        email: ["Użyj innego adresu lub przejdź do logowania."],
+      });
     }
-    if (matches(payload.password, 'weak')) {
-      return buildError('PASSWORD_TOO_WEAK', 'Hasło jest zbyt słabe.', {
-        password: ['Dodaj cyfry, znaki specjalne i wydłuż hasło.'],
-      })
+    if (matches(payload.password, "weak")) {
+      return buildError("PASSWORD_TOO_WEAK", "Hasło jest zbyt słabe.", {
+        password: ["Dodaj cyfry, znaki specjalne i wydłuż hasło."],
+      });
     }
     return buildSuccess(
-      'Symulowana rejestracja przebiegła pomyślnie. Sprawdź skrzynkę e-mail, aby aktywować konto po wdrożeniu backendu.',
-    )
+      "Symulowana rejestracja przebiegła pomyślnie. Sprawdź skrzynkę e-mail, aby aktywować konto po wdrożeniu backendu."
+    );
   },
 
-  async forgotPassword(_: ForgotPasswordDemoPayload): Promise<AuthDemoResult> {
-    await delay()
+  async forgotPassword(payload: ForgotPasswordDemoPayload): Promise<AuthDemoResult> {
+    await delay();
+    const email = payload.email.trim();
     return buildSuccess(
-      'Jeśli konto istnieje, wyślemy instrukcję resetu hasła. Wiadomość ma neutralną treść, aby chronić prywatność.',
-    )
+      `Jeśli konto (${email || "podany adres"}) istnieje, wyślemy instrukcję resetu hasła. Wiadomość ma neutralną treść, aby chronić prywatność.`
+    );
   },
 
   async resetPassword(payload: ResetPasswordDemoPayload): Promise<AuthDemoResult> {
-    await delay()
-    if (matches(payload.password, 'weak')) {
-      return buildError('PASSWORD_TOO_WEAK', 'Hasło jest zbyt słabe.', {
-        password: ['Hasło musi mieć min. 8 znaków i mieszane znaki.'],
-      })
+    await delay();
+    if (matches(payload.password, "weak")) {
+      return buildError("PASSWORD_TOO_WEAK", "Hasło jest zbyt słabe.", {
+        password: ["Hasło musi mieć min. 8 znaków i mieszane znaki."],
+      });
     }
-    return buildSuccess('Nowe hasło zostało zapisane (symulacja). Możesz wrócić do logowania.')
+    return buildSuccess("Nowe hasło zostało zapisane (symulacja). Możesz wrócić do logowania.");
   },
-}
+};
 
 const matches = (value: string | undefined, needle: string) =>
-  Boolean(value?.toLowerCase().includes(needle.toLowerCase()))
+  Boolean(value?.toLowerCase().includes(needle.toLowerCase()));
 
-export const asAuthFormResult = <TData = void>(
-  result: AuthDemoResult<TData>,
-): AuthFormSubmitResult<TData> => {
-  if (result.status === 'success') {
+export const asAuthFormResult = <TData = void>(result: AuthDemoResult<TData>): AuthFormSubmitResult<TData> => {
+  if (result.status === "success") {
     return {
-      status: 'success',
+      status: "success",
       message: result.message,
       data: result.data,
-    }
+    };
   }
 
   return {
-    status: 'error',
+    status: "error",
     code: result.code,
     message: result.message,
     fieldErrors: result.fieldErrors,
-  }
-}
+  };
+};

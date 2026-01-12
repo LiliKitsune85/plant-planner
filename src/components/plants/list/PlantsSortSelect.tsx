@@ -1,15 +1,15 @@
-import type { PlantSortField } from '@/lib/services/plants/types'
+import type { PlantSortField } from "@/lib/services/plants/types";
 
-const SORT_OPTIONS: Array<{ value: PlantSortField; label: string }> = [
-  { value: 'species_name', label: 'Nazwa gatunku' },
-  { value: 'created_at', label: 'Data dodania' },
-  { value: 'updated_at', label: 'Ostatnia aktualizacja' },
-]
+const SORT_OPTIONS: { value: PlantSortField; label: string }[] = [
+  { value: "species_name", label: "Nazwa gatunku" },
+  { value: "created_at", label: "Data dodania" },
+  { value: "updated_at", label: "Ostatnia aktualizacja" },
+];
 
-type PlantsSortSelectProps = {
-  value: PlantSortField
-  disabled?: boolean
-  onChange: (next: PlantSortField) => void
+interface PlantsSortSelectProps {
+  value: PlantSortField;
+  disabled?: boolean;
+  onChange: (next: PlantSortField) => void;
 }
 
 export const PlantsSortSelect = ({ value, disabled = false, onChange }: PlantsSortSelectProps) => {
@@ -29,7 +29,7 @@ export const PlantsSortSelect = ({ value, disabled = false, onChange }: PlantsSo
         ))}
       </select>
     </label>
-  )
-}
+  );
+};
 
-PlantsSortSelect.displayName = 'PlantsSortSelect'
+PlantsSortSelect.displayName = "PlantsSortSelect";

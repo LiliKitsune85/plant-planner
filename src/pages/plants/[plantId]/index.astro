@@ -1,5 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { logger } from "@/lib/logger";
 import { PlantDetailView } from "@/components/plants/detail/PlantDetailView";
 import type { PlantDetailInitialState } from "@/components/hooks/use-plant-detail";
 import {
@@ -9,10 +10,7 @@ import {
   buildPlantNotFoundErrorVm,
   buildUnknownPlantDetailErrorVm,
 } from "@/lib/services/plants/detail-view-model";
-import {
-  getPlantDetail,
-  mapPlantDetailRecordToDto,
-} from "@/lib/services/plants/get-plant-detail";
+import { getPlantDetail, mapPlantDetailRecordToDto } from "@/lib/services/plants/get-plant-detail";
 
 export const prerender = false;
 
@@ -61,7 +59,7 @@ if (!hasPlantId) {
       };
     }
   } catch (error) {
-    console.error("Failed to load plant detail page", {
+    logger.error("Failed to load plant detail page", {
       plantId: safePlantId,
       userId: user.id,
       error,
