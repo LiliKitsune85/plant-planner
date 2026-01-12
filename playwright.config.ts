@@ -5,7 +5,12 @@ import path from "node:path";
 dotenv.config({ path: path.resolve(process.cwd(), ".env.test") });
 
 const DEV_SERVER_PORT = Number(process.env.PLAYWRIGHT_DEV_PORT ?? 4321);
-const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${DEV_SERVER_PORT}`;
+// On Windows, `localhost` may resolve to IPv6 (::1) while the dev server binds to IPv4 only.
+// Use 127.0.0.1 by default to avoid Playwright `webServer` readiness timeouts.
+const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${DEV_SERVER_PORT}`;
+// Playwright's webServer availability check does not follow redirects.
+// Our app redirects `/` (302) for unauthenticated users, so use a stable 200 page instead.
+const WEB_SERVER_URL = new URL("/auth/login", BASE_URL).toString();
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -37,8 +42,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npm run dev:e2e -- --host localhost --port ${DEV_SERVER_PORT}`,
-    url: BASE_URL,
+    // Pass host/port via args so the dev:e2e script stays cross-platform and deterministic.
+    command: `npm run dev:e2e -- --host 127.0.0.1 --port ${DEV_SERVER_PORT}`,
+    url: WEB_SERVER_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

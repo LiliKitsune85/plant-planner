@@ -32,16 +32,24 @@ export class LoginPage extends BasePage {
     password: string,
     expectedRedirect: string | RegExp = '/plants',
   ) {
+    // Astro hydrates React islands asynchronously (client:load). If we submit before hydration,
+    // the SSR form has no onSubmit handler and the browser will just reload the login page.
+    // Waiting for the SignInForm island to hydrate prevents redirect loops/timeouts in E2E.
+    await this.page.waitForSelector(
+      'astro-island[component-url$="/src/components/auth/SignInForm.tsx"]:not([ssr])',
+      { timeout: 10_000 },
+    )
+
     await this.emailInput.fill(email)
     await this.passwordInput.fill(password)
     await this.submitButton.click()
     if (expectedRedirect instanceof RegExp) {
-      await this.page.waitForURL(expectedRedirect)
+      await this.page.waitForURL(expectedRedirect, { waitUntil: 'domcontentloaded' })
       return
     }
     const expectedPattern = expectedRedirect.startsWith('/')
       ? `**${expectedRedirect}${expectedRedirect.endsWith('/') ? '' : '**'}`
       : expectedRedirect
-    await this.page.waitForURL(expectedPattern)
+    await this.page.waitForURL(expectedPattern, { waitUntil: 'domcontentloaded' })
   }
 }

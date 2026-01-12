@@ -5,6 +5,7 @@ import { cleanupPlantFromPage } from './utils'
 
 test.describe('Create plant flow', () => {
   test('US-001: creates plant manually and reaches watering plan', async ({ browser }) => {
+    test.setTimeout(90_000)
     const context = await browser.newContext()
     const page = await context.newPage()
     const loginPage = new LoginPage(page)
