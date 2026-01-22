@@ -3,7 +3,7 @@ name: pull-request
 on:
   pull_request:
     branches:
-      - "*"
+      - master
 
 permissions:
   contents: read
@@ -55,6 +55,34 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  build:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-dist
+          path: dist
+          if-no-files-found: ignore
+          retention-days: 7
+
   e2e-tests:
     needs: lint
     runs-on: ubuntu-latest
@@ -91,6 +119,7 @@ jobs:
     needs:
       - lint
       - unit-tests
+      - build
       - e2e-tests
     if: ${{ success() }}
     runs-on: ubuntu-latest
@@ -106,6 +135,7 @@ jobs:
               "",
               "- lint: success",
               "- unit-tests: success",
+              "- build: success",
               "- e2e-tests: success",
             ].join("\n");
 

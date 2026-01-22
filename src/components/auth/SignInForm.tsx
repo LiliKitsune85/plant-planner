@@ -144,10 +144,6 @@ export const SignInForm = ({ returnTo = "/calendar" }: SignInFormProps) => {
       <Button type="submit" className="w-full" disabled={isSubmitting} data-testid="auth-submit-button">
         {isSubmitting ? "Logowanie…" : "Zaloguj się"}
       </Button>
-
-      <p className="text-xs text-muted-foreground">
-        Po poprawnym logowaniu automatycznie przeniesiemy Cię do {returnTo}.
-      </p>
     </form>
   );
 };
