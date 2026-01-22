@@ -85,6 +85,8 @@ Common tasks:
 - `playwright.config.ts` keeps the suite Chromium-only (Desktop Chrome channel) and boots the Astro dev server automatically via `npm run dev:e2e`. By default it uses port `4321` and `baseURL` `http://127.0.0.1:<port>` (important on Windows to avoid IPv6 `localhost` issues).
 - Override defaults with `PLAYWRIGHT_BASE_URL` or `PLAYWRIGHT_DEV_PORT` when needed.
 - Page Object Models live in `tests/e2e/pages` and are consumed by spec files such as `tests/e2e/smoke.spec.ts`, which already includes a visual check via `expect(page).toHaveScreenshot()`.
+- Snapshot files are OS-dependent. If CI fails on Linux due to a snapshot mismatch, re-generate snapshots in a Linux Playwright container (to match GitHub Actions), e.g.:
+  - `docker run --rm -v ${PWD}:/work -w /work --env-file .env.test mcr.microsoft.com/playwright:v1.57.0-jammy bash -lc "npm ci && npx playwright test tests/e2e/smoke.spec.ts --update-snapshots"`
 - Run `npm run test:e2e:install` once to grab the browser binary, then use `test:e2e`, `test:e2e:headed`, or `test:e2e:ui` for day-to-day work. `test:e2e:codegen` and `test:e2e:trace` tie into Playwright’s codegen and trace viewer utilities.
 - Each test gets an isolated browser context by default, and traces/screenshots/videos are retained on failure inside `tests/.output` for debugging.
 - **Preparing `.env.test` for E2E:**

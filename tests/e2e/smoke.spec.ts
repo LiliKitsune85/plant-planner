@@ -10,6 +10,7 @@ test.describe("Authentication smoke checks", () => {
     await expect(loginPage.heading).toBeVisible();
     await expect(loginPage.cardTitle).toContainText("Zaloguj się");
     await expect(loginPage.submitButton).toBeEnabled();
-    await expect(page).toHaveScreenshot("login-page.png");
+    // Snapshot only the stable UI element (card), not the whole page background.
+    await expect(loginPage.card).toHaveScreenshot("login-page.png");
   });
 });

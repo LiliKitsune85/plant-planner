@@ -9,14 +9,23 @@ interface Props {
 }
 
 const { title = "Plant Planner — logowanie", heading, description, eyebrow = "Plant Planner" } = Astro.props as Props;
+
+// E2E runs the dev server with `astro dev --mode test`.
+// Visual effects like large blurs can render slightly differently across CI environments,
+// causing flaky Playwright snapshot tests. Keep the E2E UI deterministic.
+const showDecorations = import.meta.env.MODE !== "test";
 ---
 
 <Layout title={title}>
   <main class="relative min-h-screen overflow-hidden bg-background">
-    <div class="pointer-events-none absolute inset-0">
-      <div class="absolute -left-10 top-16 h-64 w-64 rounded-full bg-primary/5 blur-3xl"></div>
-      <div class="absolute right-0 top-1/3 h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl"></div>
-    </div>
+    {
+      showDecorations ? (
+        <div class="pointer-events-none absolute inset-0">
+          <div class="absolute -left-10 top-16 h-64 w-64 rounded-full bg-primary/5 blur-3xl"></div>
+          <div class="absolute right-0 top-1/3 h-72 w-72 rounded-full bg-emerald-200/40 blur-3xl"></div>
+        </div>
+      ) : null
+    }
     <div
       class="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center gap-10 px-4 py-12 sm:px-6 lg:px-8"
     >
