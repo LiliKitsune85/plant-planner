@@ -4,6 +4,7 @@ import { BasePage } from "./BasePage";
 export class LoginPage extends BasePage {
   readonly heading: Locator;
   readonly cardTitle: Locator;
+  readonly card: Locator;
   readonly submitButton: Locator;
   readonly emailInput: Locator;
   readonly passwordInput: Locator;
@@ -13,6 +14,10 @@ export class LoginPage extends BasePage {
     this.heading = page.getByRole("heading", {
       name: /Witaj ponownie w Plant Planner/i,
     });
+    this.card = page
+      .locator('[data-slot="card"]')
+      .filter({ has: page.locator('[data-slot="card-title"]') })
+      .first();
     this.cardTitle = page.locator('[data-slot="card-title"]').filter({ hasText: /Zaloguj się/i });
     this.submitButton = page.getByRole("button", { name: /Zaloguj się/i });
     this.emailInput = page.getByTestId("auth-email-input");
