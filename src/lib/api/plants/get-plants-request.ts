@@ -18,6 +18,22 @@ const getPlantsQuerySchema = z.object({
 
 const normalizeSpeciesName = (input: string): string => input.trim().toLowerCase().replace(/\s+/g, " ");
 
+interface ValidationIssue {
+  path: string;
+  message: string;
+  code: string;
+}
+
+const formatZodIssues = (issues: z.ZodIssue[]): ValidationIssue[] =>
+  issues.map((issue) => ({
+    path: issue.path.length > 0 ? issue.path.join(".") : "(body)",
+    message: issue.message,
+    code: issue.code,
+  }));
+
+const toValidationError = (message: string, error: z.ZodError) =>
+  new HttpError(422, message, "VALIDATION_ERROR", { issues: formatZodIssues(error.issues) });
+
 export const parseListPlantsRequest = (searchParams: URLSearchParams): ListPlantsQuery => {
   const parsed = getPlantsQuerySchema.safeParse({
     q: searchParams.get("q") ?? undefined,
@@ -29,7 +45,7 @@ export const parseListPlantsRequest = (searchParams: URLSearchParams): ListPlant
   });
 
   if (!parsed.success) {
-    throw new HttpError(400, "Invalid query parameters", "INVALID_QUERY_PARAMS");
+    throw toValidationError("Invalid query parameters", parsed.error);
   }
 
   const { q, species, sort, order, limit, cursor } = parsed.data;

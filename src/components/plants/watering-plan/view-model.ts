@@ -21,7 +21,7 @@ import { SetWateringPlanApiError } from "@/lib/services/watering-plans/set-plan-
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const MAX_SPECIES_NAME_LENGTH = 200;
+const MAX_SPECIES_NAME_LENGTH = 120;
 const DEFAULT_INTERVAL_DAYS = 7;
 const DEFAULT_HORIZON_DAYS = 90;
 
@@ -73,6 +73,33 @@ const mapCreationAvailable = (
   overduePolicy: suggestion.overdue_policy,
   explanation: coerceExplanation(suggestion.explanation),
 });
+
+const buildCreationErrorState = (
+  suggestion: Extract<
+    WateringSuggestionForCreationDto,
+    { status: "timeout" | "provider_error" | "unknown_error" }
+  >
+): AiSuggestionErrorVm => {
+  if (suggestion.status === "timeout") {
+    return {
+      status: "timeout",
+      code: suggestion.code ?? undefined,
+      message: suggestion.message ?? "AI nie odpowiedziało na czas. Spróbuj ponownie lub ustaw plan ręcznie.",
+    };
+  }
+  if (suggestion.status === "provider_error") {
+    return {
+      status: "provider_error",
+      code: suggestion.code ?? undefined,
+      message: suggestion.message ?? "Dostawca AI zwrócił błąd. Spróbuj ponownie później lub ustaw plan ręcznie.",
+    };
+  }
+  return {
+    status: "unknown_error",
+    code: suggestion.code ?? undefined,
+    message: suggestion.message ?? "Nie udało się pobrać sugestii AI.",
+  };
+};
 
 const normalizeReason = (reason?: string | null): string | null => {
   if (!reason) return null;
@@ -189,7 +216,10 @@ export const mapCreationSuggestionToState = (suggestion: WateringSuggestionForCr
         unlockAt: suggestion.unlock_at ?? null,
         aiRequestId: suggestion.ai_request_id,
       };
-    case "error":
+    case "timeout":
+    case "provider_error":
+    case "unknown_error":
+      return buildCreationErrorState(suggestion);
     case "skipped":
     default:
       return {

@@ -4,7 +4,7 @@ import { logger } from "@/lib/logger";
 import { HttpError } from "../http/errors";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "xiaomi/mimo-v2-flash:free";
+const DEFAULT_MODEL = "openai/gpt-4o-mini";
 const DEFAULT_TIMEOUT_MS = 5_000;
 const DEFAULT_APP_URL = "https://plant-planner.app";
 const DEFAULT_APP_TITLE = "Plant Planner";
@@ -247,7 +247,7 @@ export class OpenRouterService {
 
     const chatResponse = await this.chat(request);
     const parsed = this.parseJsonContent(chatResponse.content);
-    const data = this.validate(parsed, schema);
+    const data = this.validate(parsed, schema, chatResponse.content);
 
     return {
       data,
@@ -411,11 +411,13 @@ export class OpenRouterService {
     }
   }
 
-  private validate<T>(parsed: unknown, schema: ZodType<T>): T {
+  private validate<T>(parsed: unknown, schema: ZodType<T>, rawContent?: string): T {
     const validation = schema.safeParse(parsed);
     if (!validation.success) {
       logger.error("OpenRouter response schema validation failed", {
         issues: validation.error.issues,
+        contentSnippet: rawContent?.slice(0, 500),
+        contentLength: rawContent?.length,
       });
       throw new HttpError(502, "AI provider returned invalid payload", "AI_PROVIDER_ERROR", {
         issues: validation.error.issues,

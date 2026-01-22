@@ -1,10 +1,9 @@
 import type { CalendarDayResponseDto, CalendarTaskSummaryDto } from "@/types";
 
 import type { CalendarTaskSortField, CalendarTaskStatusFilter, SortOrder } from "./types";
+import type { CalendarMonthErrorVm, CalendarStatusFilterOption } from "./month-view-model";
 import {
   CALENDAR_STATUS_LABELS,
-  CalendarStatusFilterOption,
-  CalendarMonthErrorVm,
   buildStatusFilterOptions,
   defaultDayHrefBuilder,
   defaultMonthHrefBuilder,

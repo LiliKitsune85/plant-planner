@@ -1,4 +1,4 @@
-export type PlantWateringPlanMode = "suggest" | "edit";
+export type PlantWateringPlanMode = "suggest" | "edit" | "manual";
 
 export type WateringPlanSourceVm =
   | { type: "ai"; aiRequestId: string; acceptedWithoutChanges: boolean }

@@ -13,6 +13,9 @@ const isValidIsoDate = (value: string): boolean => {
   return parsed.toISOString().slice(0, 10) === value;
 };
 
+const getTodayIsoDate = (): string => new Date().toISOString().slice(0, 10);
+const isFutureIsoDate = (value: string): boolean => value > getTodayIsoDate();
+
 const isoDateStringSchema = z
   .string()
   .trim()
@@ -67,6 +70,14 @@ const UpdateWateringTaskPayloadSchema = z
         message: "completed_on cannot be provided when status is pending",
       });
     }
+
+    if (value.completed_on && isFutureIsoDate(value.completed_on)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["completed_on"],
+        message: "completed_on cannot be in the future",
+      });
+    }
   });
 
 interface ValidationIssue {
@@ -93,7 +104,7 @@ export const parseUpdateWateringTaskParams = (params: Record<string, string | un
   });
 
   if (!parsed.success) {
-    throw new HttpError(400, "Invalid taskId", "INVALID_TASK_ID");
+    throw toValidationError("Invalid taskId", parsed.error);
   }
 
   return parsed.data;

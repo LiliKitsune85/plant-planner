@@ -21,6 +21,7 @@ interface AdhocWateringDialogProps {
 type FieldErrors = Record<string, string[]>;
 
 const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const getTodayIsoDate = (): string => new Date().toISOString().slice(0, 10);
 
 export const AdhocWateringDialog = ({
   open,
@@ -60,6 +61,7 @@ export const AdhocWateringDialog = ({
   const validate = (): boolean => {
     const nextFieldErrors: FieldErrors = {};
     const nextFormError: string | null = null;
+    const todayIso = getTodayIsoDate();
 
     if (!selectedPlant) {
       nextFieldErrors.plant = ["Wybierz roślinę do wpisu."];
@@ -67,6 +69,8 @@ export const AdhocWateringDialog = ({
 
     if (!completedOn || !ISO_DATE_REGEX.test(completedOn)) {
       nextFieldErrors.completed_on = ["Podaj poprawną datę wykonania w formacie RRRR-MM-DD."];
+    } else if (completedOn > todayIso) {
+      nextFieldErrors.completed_on = ["Nie można dodać wpisu w przyszłości."];
     }
 
     if (note.trim().length > 500) {
@@ -133,6 +137,7 @@ export const AdhocWateringDialog = ({
               value={completedOn}
               onChange={(event) => setCompletedOn(event.target.value)}
               disabled={pending}
+              max={getTodayIsoDate()}
             />
             {fieldErrors.completed_on && (
               <p className="text-sm text-destructive">{fieldErrors.completed_on.join(" ")}</p>

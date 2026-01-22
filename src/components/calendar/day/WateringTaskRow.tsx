@@ -6,6 +6,7 @@ interface WateringTaskRowProps {
   task: CalendarDayTaskVm;
   isPending?: boolean;
   isHighlighted?: boolean;
+  disableConfirm?: boolean;
   onConfirm?: (task: CalendarDayTaskVm) => void;
   onUndo?: (task: CalendarDayTaskVm) => void;
   onEdit?: (task: CalendarDayTaskVm) => void;
@@ -27,12 +28,13 @@ export const WateringTaskRow = ({
   task,
   isPending,
   isHighlighted,
+  disableConfirm,
   onConfirm,
   onUndo,
   onEdit,
   onDelete,
 }: WateringTaskRowProps) => {
-  const canConfirm = task.status === "pending";
+  const canConfirm = task.status === "pending" && !disableConfirm;
   const canUndo = task.status === "completed" && task.isScheduled;
   const canDelete = task.isAdhoc || (task.isScheduled && task.status === "completed");
 
@@ -86,8 +88,8 @@ export const WateringTaskRow = ({
         {task.note && <p className="text-sm text-muted-foreground whitespace-pre-line">{task.note}</p>}
 
         <div className="flex flex-wrap gap-2">
-          {canConfirm && (
-            <Button size="sm" onClick={handleConfirm} disabled={isPending}>
+          {task.status === "pending" && (
+            <Button size="sm" onClick={handleConfirm} disabled={isPending || disableConfirm}>
               Potwierdź
             </Button>
           )}

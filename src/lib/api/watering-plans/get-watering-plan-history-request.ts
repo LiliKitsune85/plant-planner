@@ -24,6 +24,22 @@ const querySchema = z.object({
   cursor: z.string().trim().min(1).max(MAX_CURSOR_LENGTH).optional(),
 });
 
+interface ValidationIssue {
+  path: string;
+  message: string;
+  code: string;
+}
+
+const formatZodIssues = (issues: z.ZodIssue[]): ValidationIssue[] =>
+  issues.map((issue) => ({
+    path: issue.path.length > 0 ? issue.path.join(".") : "(body)",
+    message: issue.message,
+    code: issue.code,
+  }));
+
+const toValidationError = (message: string, error: z.ZodError) =>
+  new HttpError(422, message, "VALIDATION_ERROR", { issues: formatZodIssues(error.issues) });
+
 export const parseWateringPlanHistoryQuery = (searchParams: URLSearchParams): WateringPlanHistoryFilters => {
   const parsed = querySchema.safeParse({
     active_only: searchParams.get("active_only") ?? undefined,
@@ -34,7 +50,7 @@ export const parseWateringPlanHistoryQuery = (searchParams: URLSearchParams): Wa
   });
 
   if (!parsed.success) {
-    throw new HttpError(400, "Invalid query parameters", "INVALID_QUERY_PARAMS");
+    throw toValidationError("Invalid query parameters", parsed.error);
   }
 
   const { active_only, sort, order, limit, cursor } = parsed.data;

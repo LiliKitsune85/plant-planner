@@ -115,15 +115,23 @@ type WateringSuggestionRateLimited = WateringSuggestionBase & {
   unlock_at: AiRequestRow["requested_at"];
 };
 
-interface WateringSuggestionError {
-  status: "error" | "skipped";
-  ai_request_id: AiRequestRow["id"] | null;
+interface WateringSuggestionSkipped {
+  status: "skipped";
+  ai_request_id: null;
   explanation?: string | null;
+}
+
+interface WateringSuggestionError {
+  status: "timeout" | "provider_error" | "unknown_error";
+  ai_request_id: AiRequestRow["id"] | null;
+  message?: string | null;
+  code?: string | null;
 }
 
 export type WateringSuggestionForCreationDto =
   | WateringSuggestionAvailable
   | WateringSuggestionRateLimited
+  | WateringSuggestionSkipped
   | WateringSuggestionError;
 
 export interface CreatePlantResultDto {

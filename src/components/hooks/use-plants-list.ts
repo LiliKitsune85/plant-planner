@@ -94,6 +94,7 @@ export const usePlantsList = ({ initialQuery }: UsePlantsListOptions): UsePlants
     }
 
     const fetchPlants = async () => {
+      logger.info("usePlantsList: fetching list", { query, reloadToken, cacheKey, hasCache: Boolean(cachedEntry) });
       try {
         const {
           data,
@@ -113,6 +114,11 @@ export const usePlantsList = ({ initialQuery }: UsePlantsListOptions): UsePlants
         if (!isActive) return;
 
         const mapped = data.items.map(mapPlantListItemDtoToVm);
+        logger.info("usePlantsList: fetch success", {
+          count: mapped.length,
+          nextCursor: cursor,
+          requestId: reqId,
+        });
         setItems(mapped);
         setNextCursor(cursor);
         setRequestId(reqId);
@@ -122,6 +128,11 @@ export const usePlantsList = ({ initialQuery }: UsePlantsListOptions): UsePlants
         if (!isActive || controller.signal.aborted) return;
 
         if (err instanceof PlantsApiError) {
+          logger.warn("usePlantsList: fetch failed", {
+            code: err.code,
+            status: err.status,
+            requestId: err.requestId,
+          });
           setError(buildPlantsListErrorVmFromApiError(err));
         } else {
           logger.error("Unexpected error in usePlantsList", err);
@@ -167,6 +178,7 @@ export const usePlantsList = ({ initialQuery }: UsePlantsListOptions): UsePlants
     setLoadMoreError(undefined);
 
     try {
+      logger.info("usePlantsList: loading more", { nextCursor, query });
       const { data, nextCursor: cursor } = await listPlants(
         {
           q: query.q,
@@ -182,12 +194,18 @@ export const usePlantsList = ({ initialQuery }: UsePlantsListOptions): UsePlants
       if (controller.signal.aborted) return;
 
       const mapped = data.items.map(mapPlantListItemDtoToVm);
+      logger.info("usePlantsList: load more success", { count: mapped.length, nextCursor: cursor });
       setItems((prev) => [...prev, ...mapped]);
       setNextCursor(cursor);
     } catch (err) {
       if (controller.signal.aborted) return;
 
       if (err instanceof PlantsApiError) {
+        logger.warn("usePlantsList: load more failed", {
+          code: err.code,
+          status: err.status,
+          requestId: err.requestId,
+        });
         setLoadMoreError(buildPlantsListErrorVmFromApiError(err));
       } else {
         logger.error("Unexpected error while loading more plants", err);

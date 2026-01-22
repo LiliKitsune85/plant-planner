@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { SuggestWateringPlanCommand } from "../../../types";
 import { HttpError } from "../../http/errors";
 
-const MAX_SPECIES_NAME_LENGTH = 200;
+const MAX_SPECIES_NAME_LENGTH = 120;
 
 const normalizeWhitespace = (input: string): string => input.trim().replace(/\s+/g, " ");
 
@@ -47,14 +47,14 @@ const formatZodIssues = (issues: z.ZodIssue[]): ValidationIssue[] =>
     code: issue.code,
   }));
 
-const buildValidationError = (status: number, code: string, message: string, error: z.ZodError) =>
-  new HttpError(status, message, code, { issues: formatZodIssues(error.issues) });
+const buildValidationError = (message: string, error: z.ZodError) =>
+  new HttpError(422, message, "VALIDATION_ERROR", { issues: formatZodIssues(error.issues) });
 
 export const parseSuggestWateringPlanParams = (params: Record<string, string | undefined>) => {
   const parsed = suggestWateringPlanParamsSchema.safeParse({ plantId: params.plantId });
 
   if (!parsed.success) {
-    throw buildValidationError(400, "INVALID_PLANT_ID", "Invalid plantId", parsed.error);
+    throw buildValidationError("Invalid plantId", parsed.error);
   }
 
   return parsed.data;
@@ -64,7 +64,7 @@ export const parseSuggestWateringPlanRequest = (body: unknown): SuggestWateringP
   const parsed = suggestWateringPlanPayloadSchema.safeParse(body);
 
   if (!parsed.success) {
-    throw buildValidationError(400, "VALIDATION_ERROR", "Invalid request body", parsed.error);
+    throw buildValidationError("Invalid request body", parsed.error);
   }
 
   return parsed.data;

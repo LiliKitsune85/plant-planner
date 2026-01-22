@@ -32,10 +32,15 @@ This document proposes a REST API for the **Plant Planner** MVP, based on the cu
   "error": {
     "code": "VALIDATION_ERROR",
     "message": "Human readable message",
-    "details": { "field": "reason" }
+    "details": {
+      "issues": [
+        { "path": "species_name", "message": "Required", "code": "too_small" }
+      ]
+    }
   }
 }
 ```
+- **Validation errors**: always return `422 VALIDATION_ERROR` with `details.issues[]` (path/message/code).
 - **Contract note**: pola elementów listy są w 100% zgodne z odpowiadającymi im DTO z `src/types.ts` (np. `PlantListItemDto = PlantSummaryDto`). Przykłady mogą pomijać wartości `null` wyłącznie dla czytelności.
 
 - **Security defaults**:
@@ -156,6 +161,7 @@ This document proposes a REST API for the **Plant Planner** MVP, based on the cu
 
 - **Errors**:
   - `401 UNAUTHENTICATED`
+  - `422 VALIDATION_ERROR`
 
 #### PATCH `/api/me/profile`
 - **Opis**: Update profile fields.
@@ -272,6 +278,8 @@ This document proposes a REST API for the **Plant Planner** MVP, based on the cu
 
 - **Notes**:
   - If AI quota is exceeded, the plant is still created and `watering_suggestion.status` becomes `rate_limited` with an `unlock_at` timestamp.
+  - If `generate_watering_suggestion` is omitted, the server defaults it to `true`.
+  - Possible `watering_suggestion.status`: `available | rate_limited | skipped | timeout | provider_error | unknown_error`.
 - **Errors**:
   - `401 UNAUTHENTICATED`
   - `422 VALIDATION_ERROR` (e.g. species_name length)
@@ -314,6 +322,7 @@ This document proposes a REST API for the **Plant Planner** MVP, based on the cu
 - **Errors**:
   - `401 UNAUTHENTICATED`
   - `404 NOT_FOUND`
+  - `422 VALIDATION_ERROR`
 
 #### PATCH `/api/plants/{plantId}`
 - **Opis**: Update optional plant fields. `species_name` is immutable in MVP.
@@ -352,6 +361,7 @@ This document proposes a REST API for the **Plant Planner** MVP, based on the cu
 - **Errors**:
   - `401 UNAUTHENTICATED`
   - `404 NOT_FOUND`
+  - `422 VALIDATION_ERROR`
   - `400 CONFIRMATION_REQUIRED`
 
 ---
@@ -519,7 +529,7 @@ This document proposes a REST API for the **Plant Planner** MVP, based on the cu
 - **Errors**:
   - `401 UNAUTHENTICATED`
   - `404 NOT_FOUND`
-  - `400 INVALID_QUERY_PARAMS` / `INVALID_CURSOR`
+  - `422 VALIDATION_ERROR` / `INVALID_CURSOR`
 
 #### PUT `/api/plants/{plantId}/watering-plan`
 - **Opis**: Set the plant’s current active watering plan (creates a new plan version, deactivates previous, regenerates tasks).
@@ -650,7 +660,7 @@ This document proposes a REST API for the **Plant Planner** MVP, based on the cu
 ```
 
 - **Errors**:
-  - `400 VALIDATION_ERROR` (missing/invalid `date`, unsupported `status|sort|order`)
+  - `422 VALIDATION_ERROR` (missing/invalid `date`, unsupported `status|sort|order`)
   - `401 UNAUTHENTICATED`
   - `500 CALENDAR_DAY_QUERY_FAILED`
 

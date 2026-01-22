@@ -1,0 +1,46 @@
+---
+import { AuthCard } from "@/components/auth/AuthCard";
+import { Button } from "@/components/ui/button";
+import AuthLayout from "@/layouts/AuthLayout.astro";
+
+export const prerender = false;
+
+const rawEmail = Astro.url.searchParams.get("email") ?? "";
+const email = rawEmail.trim();
+const rawReturnTo = Astro.url.searchParams.get("returnTo");
+const returnTo = rawReturnTo && rawReturnTo.startsWith("/") ? rawReturnTo : "/calendar";
+const loginHref = `/auth/login?returnTo=${encodeURIComponent(returnTo)}`;
+---
+
+<AuthLayout
+  title="Plant Planner — potwierdź e-mail"
+  heading="Dziękujemy za rejestrację"
+  description="Na koniec potwierdź adres e-mail, aby aktywować konto."
+  eyebrow="Krok końcowy"
+>
+  <AuthCard
+    title="Sprawdź skrzynkę pocztową"
+    description="Wysłaliśmy wiadomość aktywacyjną. Kliknij link w e-mailu, aby dokończyć rejestrację."
+  >
+    <div class="space-y-4 text-sm text-muted-foreground">
+      <p>
+        {email ? (
+          <>
+            Wysłaliśmy wiadomość na <span class="font-semibold text-foreground">{email}</span>. Jeśli nie widzisz maila,
+            sprawdź folder spam.
+          </>
+        ) : (
+          <>Sprawdź skrzynkę e-mail i folder spam, aby znaleźć wiadomość aktywacyjną.</>
+        )}
+      </p>
+      <div class="flex flex-wrap gap-2">
+        <Button asChild>
+          <a href={loginHref}>Przejdź do logowania</a>
+        </Button>
+        <Button asChild variant="outline">
+          <a href="/auth/register">Wróć do rejestracji</a>
+        </Button>
+      </div>
+    </div>
+  </AuthCard>
+</AuthLayout>

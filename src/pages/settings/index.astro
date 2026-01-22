@@ -1,0 +1,21 @@
+---
+import AppShell from "@/layouts/AppShell.astro";
+
+export const prerender = false;
+---
+
+<AppShell title="Ustawienia" section="settings">
+  <section class="mx-auto flex max-w-3xl flex-col gap-6">
+    <header class="space-y-2">
+      <p class="text-xs font-semibold uppercase tracking-[0.25em] text-muted-foreground">Ustawienia</p>
+      <h1 class="text-3xl font-bold tracking-tight text-foreground">Profil i preferencje</h1>
+      <p class="text-base text-muted-foreground">
+        Zarządzaj danymi konta, preferencjami planowania i ustawieniami powiadomień.
+      </p>
+    </header>
+
+    <div class="rounded-2xl border border-border/70 bg-card/60 p-6 text-sm text-muted-foreground">
+      Ten widok jest w przygotowaniu. Już wkrótce pojawią się tutaj opcje profilu i preferencji.
+    </div>
+  </section>
+</AppShell>

@@ -4,11 +4,11 @@ import { z } from "zod";
 
 import { AuthErrorAlert } from "@/components/auth/AuthErrorAlert";
 import { AuthNotice } from "@/components/auth/AuthNotice";
-import { asAuthFormResult, authDemoClient } from "@/components/auth/demo-auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuthForm } from "@/components/hooks/use-auth-form";
+import { AuthApiError, signUp as signUpRequest } from "@/lib/services/auth/auth-client";
 
 const schema = z
   .object({
@@ -44,7 +44,35 @@ export const SignUpForm = ({ returnTo = "/calendar" }: SignUpFormProps) => {
       timezone: form.timezone,
       returnTo,
     }),
-    submit: async (payload) => asAuthFormResult(await authDemoClient.signUp(payload)),
+    submit: async (payload) => {
+      try {
+        await signUpRequest(payload);
+        return {
+          status: "success",
+          message: "Rejestracja zakończona. Sprawdź skrzynkę e-mail, aby potwierdzić konto.",
+        } as const;
+      } catch (error) {
+        if (error instanceof AuthApiError) {
+          return {
+            status: "error",
+            code: error.code,
+            message: error.message,
+            fieldErrors: error.fieldErrors,
+          } as const;
+        }
+        return {
+          status: "error",
+          message: "Nie udało się utworzyć konta. Spróbuj ponownie później.",
+        } as const;
+      }
+    },
+    onSuccess: (_, payload) => {
+      if (typeof window === "undefined") return;
+      const params = new URLSearchParams();
+      params.set("email", payload.email);
+      params.set("returnTo", payload.returnTo);
+      window.location.assign(`/auth/register/success?${params.toString()}`);
+    },
   });
 
   useEffect(() => {

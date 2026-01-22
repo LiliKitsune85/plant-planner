@@ -13,10 +13,14 @@ const isValidIsoDate = (value: string): boolean => {
   return parsed.toISOString().slice(0, 10) === value;
 };
 
+const getTodayIsoDate = (): string => new Date().toISOString().slice(0, 10);
+const isFutureIsoDate = (value: string): boolean => value > getTodayIsoDate();
+
 const isoDateStringSchema = z
   .string()
   .trim()
-  .refine(isValidIsoDate, { message: "Invalid ISO date (expected YYYY-MM-DD)" });
+  .refine(isValidIsoDate, { message: "Invalid ISO date (expected YYYY-MM-DD)" })
+  .refine((value) => !isFutureIsoDate(value), { message: "completed_on cannot be in the future" });
 
 const noteInputSchema = z
   .union([z.string(), z.null()])
@@ -59,14 +63,14 @@ const formatZodIssues = (issues: z.ZodIssue[]): ValidationIssue[] =>
   }));
 
 const toValidationError = (message: string, error: z.ZodError) =>
-  new HttpError(400, message, "VALIDATION_ERROR", { issues: formatZodIssues(error.issues) });
+  new HttpError(422, message, "VALIDATION_ERROR", { issues: formatZodIssues(error.issues) });
 
 export type AdhocWateringParams = z.infer<typeof AdhocWateringParamsSchema>;
 
 export const parseAdhocWateringParams = (params: Record<string, string | undefined>): AdhocWateringParams => {
   const parsed = AdhocWateringParamsSchema.safeParse({ plantId: params.plantId });
   if (!parsed.success) {
-    throw new HttpError(400, "Invalid plantId", "INVALID_PLANT_ID");
+    throw toValidationError("Invalid plantId", parsed.error);
   }
 
   return parsed.data;

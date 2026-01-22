@@ -29,9 +29,13 @@ export const getAiQuota = async (
     throw new HttpError(500, "Missing userId for AI quota", "AI_QUOTA_USER_MISSING");
   }
 
+  logger.info("getAiQuota - Starting", { userId, now: now.toISOString() });
+
   const { start, end } = getHourlyWindow(now);
   const windowStartIso = start.toISOString();
   const windowEndIso = end.toISOString();
+
+  logger.info("getAiQuota - Window calculated", { windowStartIso, windowEndIso });
 
   const { count, error } = await supabase
     .from("ai_requests")
@@ -39,6 +43,8 @@ export const getAiQuota = async (
     .eq("user_id", userId)
     .gte("requested_at", windowStartIso)
     .lt("requested_at", windowEndIso);
+
+  logger.info("getAiQuota - Supabase query completed", { count, error });
 
   if (error) {
     logger.error("getAiQuota supabase count failed", { error, userId });

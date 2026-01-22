@@ -42,6 +42,8 @@ export const CalendarDayView = ({ date, status, sort, order }: CalendarDayViewPr
     sort,
     order,
   });
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const isFutureDate = (data?.date ?? date) > todayIso;
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
   const [adhocOpen, setAdhocOpen] = useState(false);
@@ -309,7 +311,7 @@ export const CalendarDayView = ({ date, status, sort, order }: CalendarDayViewPr
         <p className="text-sm text-muted-foreground">
           {data.hasTasks ? "Zarządzaj wpisami z danego dnia." : "Brak wpisów — dodaj wpis ad hoc lub zmień filtr."}
         </p>
-        <Button onClick={() => setAdhocOpen(true)} disabled={mutations.globalPending}>
+        <Button onClick={() => setAdhocOpen(true)} disabled={mutations.globalPending || isFutureDate}>
           Dodaj wpis ad hoc
         </Button>
       </div>
@@ -340,6 +342,7 @@ export const CalendarDayView = ({ date, status, sort, order }: CalendarDayViewPr
           items={mergedTasks}
           pendingByTaskId={mutations.pendingByTaskId}
           highlightPlantId={highlightPlantId}
+          disableConfirm={isFutureDate}
           onConfirm={(task) => mutations.confirmTask(task)}
           onUndo={(task) => mutations.undoTask(task)}
           onEdit={(task) => setEditingTaskId(task.id)}

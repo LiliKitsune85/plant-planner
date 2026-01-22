@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { APIRoute } from "astro";
 import { logger } from "@/lib/logger";
 
@@ -5,6 +6,7 @@ import type { SupabaseClient } from "../../../db/supabase.client";
 import { createAdminClient } from "../../../db/supabase.admin";
 import { parseCreatePlantRequest } from "../../../lib/api/plants/create-plant-request";
 import { parseListPlantsRequest } from "../../../lib/api/plants/get-plants-request";
+import { requireUserId } from "../../../lib/api/auth/require-user-id";
 import { HttpError, isHttpError } from "../../../lib/http/errors";
 import { createPlant } from "../../../lib/services/plants/create-plant";
 import { listPlants } from "../../../lib/services/plants/list-plants";
@@ -19,9 +21,15 @@ import type {
 
 export const prerender = false;
 
+interface ApiErrorPayload {
+  code: string;
+  message: string;
+  details?: unknown;
+}
+
 interface ApiEnvelope<TData> {
   data: TData | null;
-  error: { code: string; message: string } | null;
+  error: ApiErrorPayload | null;
   meta: Record<string, unknown>;
 }
 
@@ -34,23 +42,10 @@ const json = <TData>(status: number, envelope: ApiEnvelope<TData>, headers?: Hea
     },
   });
 
-const getBearerToken = (request: Request): string | null => {
-  const header = request.headers.get("authorization");
-  if (!header) return null;
-
-  const match = /^Bearer\s+(.+)$/.exec(header);
-  return match?.[1] ?? null;
-};
-
-const requireUserId = async (locals: App.Locals, request: Request) => {
-  const token = getBearerToken(request);
-  const { data, error } = token ? await locals.supabase.auth.getUser(token) : await locals.supabase.auth.getUser();
-
-  if (error || !data.user) {
-    throw new HttpError(401, "Unauthenticated", "UNAUTHENTICATED");
-  }
-
-  return data.user.id;
+const baseHeaders = {
+  "Cache-Control": "no-store",
+  // Protect per-user responses when cached by shared proxies.
+  Vary: "Authorization, Cookie",
 };
 
 const buildSkippedSuggestion = (): WateringSuggestionForCreationDto => ({
@@ -89,6 +84,14 @@ interface GenerateWateringSuggestionParams {
 }
 
 const AI_FAILURE_MESSAGE = "AI watering suggestion is temporarily unavailable. Configure the plan manually.";
+
+const mapAiFailureStatus = (error: unknown): "timeout" | "provider_error" | "unknown_error" => {
+  if (isHttpError(error)) {
+    if (error.code === "AI_TIMEOUT") return "timeout";
+    if (error.code === "AI_PROVIDER_ERROR") return "provider_error";
+  }
+  return "unknown_error";
+};
 
 const generateWateringSuggestion = async ({
   supabaseUser,
@@ -131,15 +134,21 @@ const generateWateringSuggestion = async ({
     };
   } catch (error) {
     logAiSuggestionFailure(error, plant.id, userId);
+    const status = mapAiFailureStatus(error);
+    const message = isHttpError(error) ? error.message : AI_FAILURE_MESSAGE;
+    const code = isHttpError(error) ? error.code : undefined;
     return {
-      status: "error",
+      status,
       ai_request_id: extractAiRequestId(error),
-      explanation: AI_FAILURE_MESSAGE,
+      message,
+      code,
     };
   }
 };
 
 export const GET: APIRoute = async ({ locals, request, url }) => {
+  const requestId = randomUUID();
+
   try {
     const query = parseListPlantsRequest(url.searchParams);
     const userId = await requireUserId(locals, request);
@@ -155,31 +164,45 @@ export const GET: APIRoute = async ({ locals, request, url }) => {
     const result = await listPlants(locals.supabase, { userId, query });
     const data: PlantListDto = { items: result.items };
 
-    return json(200, {
-      data,
-      error: null,
-      meta: { next_cursor: result.nextCursor },
-    });
+    return json(
+      200,
+      {
+        data,
+        error: null,
+        meta: { next_cursor: result.nextCursor, request_id: requestId },
+      },
+      baseHeaders
+    );
   } catch (error) {
     if (isHttpError(error)) {
-      return json(error.status, {
-        data: null,
-        error: { code: error.code, message: error.message },
-        meta: {},
-      });
+      return json(
+        error.status,
+        {
+          data: null,
+          error: { code: error.code, message: error.message, details: error.details },
+          meta: { request_id: requestId },
+        },
+        baseHeaders
+      );
     }
 
     logger.error("Unhandled error in GET /api/plants", { error });
 
-    return json(500, {
-      data: null,
-      error: { code: "INTERNAL_SERVER_ERROR", message: "Internal server error" },
-      meta: {},
-    });
+    return json(
+      500,
+      {
+        data: null,
+        error: { code: "INTERNAL_SERVER_ERROR", message: "Internal server error" },
+        meta: { request_id: requestId },
+      },
+      baseHeaders
+    );
   }
 };
 
 export const POST: APIRoute = async ({ locals, request, url }) => {
+  const requestId = randomUUID();
+
   try {
     let body: unknown;
     try {
@@ -209,24 +232,20 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
 
     const result: CreatePlantResultDto = { plant, watering_suggestion };
 
-    return json(
-      201,
-      { data: result, error: null, meta: {} },
-      {
-        "Cache-Control": "no-store",
-        Location: new URL(`/api/plants/${plant.id}`, url).toString(),
-      }
-    );
+    return json(201, { data: result, error: null, meta: { request_id: requestId } }, {
+      ...baseHeaders,
+      Location: new URL(`/api/plants/${plant.id}`, url).toString(),
+    });
   } catch (error) {
     if (isHttpError(error)) {
       return json(
         error.status,
         {
           data: null,
-          error: { code: error.code, message: error.message },
-          meta: {},
+          error: { code: error.code, message: error.message, details: error.details },
+          meta: { request_id: requestId },
         },
-        { "Cache-Control": "no-store" }
+        baseHeaders
       );
     }
 
@@ -237,9 +256,9 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
       {
         data: null,
         error: { code: "INTERNAL_SERVER_ERROR", message: "Internal server error" },
-        meta: {},
+        meta: { request_id: requestId },
       },
-      { "Cache-Control": "no-store" }
+      baseHeaders
     );
   }
 };

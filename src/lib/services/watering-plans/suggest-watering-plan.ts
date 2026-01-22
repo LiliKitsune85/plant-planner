@@ -180,12 +180,18 @@ const buildMessages = (speciesName: string): OpenRouterChatMessageInput[] => [
     role: "system",
     content:
       "You are a horticulture assistant that suggests concise watering schedules. " +
-      "Always respond with JSON that matches the provided schema. " +
+      "Return the explanation in Polish. " +
+      "Return ONLY a valid JSON object that matches the provided schema. " +
+      "Do not include any extra keys, comments, markdown, or prose. " +
+      "If you cannot comply, still return a JSON object that matches the schema with best-effort values. " +
       "Base your recommendation only on the user supplied species name.",
   },
   {
     role: "user",
-    content: `Provide a watering plan suggestion for the following plant species:\n\n${speciesName}`,
+    content:
+      "Provide a watering plan suggestion for the following plant species.\n" +
+      "Respond with ONLY JSON that matches the schema (no extra keys).\n\n" +
+      `species_name: ${speciesName}`,
   },
 ];
 
@@ -260,6 +266,14 @@ export const suggestWateringPlan = async (
         totalTokens: aiResult.usage.totalTokens ?? undefined,
       },
     });
+    logger.info("suggestWateringPlan: AI response accepted", {
+      aiRequestId,
+      model: aiResult.model,
+      latencyMs: aiResult.latencyMs,
+      promptTokens: aiResult.usage.promptTokens,
+      completionTokens: aiResult.usage.completionTokens,
+      totalTokens: aiResult.usage.totalTokens,
+    });
 
     const parsedSuggestion = toWateringPlanConfig(aiResult.data.suggestion);
 
@@ -278,6 +292,12 @@ export const suggestWateringPlan = async (
         id: aiRequestId,
         code: error.code,
         message: error.message,
+      });
+      logger.warn("suggestWateringPlan: AI provider error", {
+        aiRequestId,
+        code: error.code,
+        message: error.message,
+        details: error.details,
       });
       throw new HttpError(error.status, error.message, error.code, withAiRequestDetails(error.details, aiRequestId));
     }

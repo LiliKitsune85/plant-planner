@@ -9,10 +9,26 @@ const plantIdParamSchema = z.object({
 
 export type PlantIdParams = z.infer<typeof plantIdParamSchema>;
 
+interface ValidationIssue {
+  path: string;
+  message: string;
+  code: string;
+}
+
+const formatZodIssues = (issues: z.ZodIssue[]): ValidationIssue[] =>
+  issues.map((issue) => ({
+    path: issue.path.length > 0 ? issue.path.join(".") : "(body)",
+    message: issue.message,
+    code: issue.code,
+  }));
+
+const toValidationError = (message: string, error: z.ZodError) =>
+  new HttpError(422, message, "VALIDATION_ERROR", { issues: formatZodIssues(error.issues) });
+
 export const parsePlantIdParams = (params: Record<string, string | undefined>): PlantIdParams => {
   const parsed = plantIdParamSchema.safeParse({ plantId: params.plantId });
   if (!parsed.success) {
-    throw new HttpError(400, "Invalid plantId", "INVALID_PLANT_ID");
+    throw toValidationError("Invalid plantId", parsed.error);
   }
 
   return parsed.data;

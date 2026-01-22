@@ -33,6 +33,19 @@ const buildValidationDetails = (error: z.ZodError): Record<string, string[]> => 
   return details;
 };
 
+interface ValidationIssue {
+  path: string;
+  message: string;
+  code: string;
+}
+
+const formatZodIssues = (issues: z.ZodIssue[]): ValidationIssue[] =>
+  issues.map((issue) => ({
+    path: issue.path.length > 0 ? issue.path.join(".") : "(body)",
+    message: issue.message,
+    code: issue.code,
+  }));
+
 export const parseGetCalendarDayQuery = (searchParams: URLSearchParams): GetCalendarDayFilters => {
   const parsed = getCalendarDayQuerySchema.safeParse({
     date: searchParams.get("date"),
@@ -42,8 +55,9 @@ export const parseGetCalendarDayQuery = (searchParams: URLSearchParams): GetCale
   });
 
   if (!parsed.success) {
-    throw new HttpError(400, "Invalid query parameters", "VALIDATION_ERROR", {
+    throw new HttpError(422, "Invalid query parameters", "VALIDATION_ERROR", {
       fields: buildValidationDetails(parsed.error),
+      issues: formatZodIssues(parsed.error.issues),
     });
   }
 

@@ -39,6 +39,7 @@ export interface PlantWateringPlanViewProps {
   plantId: string;
   mode?: PlantWateringPlanMode;
   initialSpeciesName?: string;
+  source?: "detail";
 }
 
 const getTodayIsoDate = (): string => {
@@ -50,12 +51,18 @@ export const PlantWateringPlanView: FC<PlantWateringPlanViewProps> = ({
   plantId,
   mode = "suggest",
   initialSpeciesName,
+  source,
 }) => {
-  const [currentMode, setCurrentMode] = useState<PlantWateringPlanMode>(mode);
+  const isManualMode = mode === "manual";
+  const initialMode: PlantWateringPlanMode = isManualMode ? "edit" : mode;
+  const initialEditorMode: "ai_edit" | "manual" = mode === "edit" || isManualMode ? "manual" : "ai_edit";
+  const initialAiEnabled = mode !== "edit" && !isManualMode;
+
+  const [currentMode, setCurrentMode] = useState<PlantWateringPlanMode>(initialMode);
   const [speciesName, setSpeciesName] = useState<string | null>(initialSpeciesName ?? null);
   const [creationSuggestion, setCreationSuggestion] = useState<WateringSuggestionForCreationDto | null>(null);
-  const [aiEnabled, setAiEnabled] = useState(mode !== "edit");
-  const [editorMode, setEditorMode] = useState<"ai_edit" | "manual">(mode === "edit" ? "manual" : "ai_edit");
+  const [aiEnabled, setAiEnabled] = useState(initialAiEnabled);
+  const [editorMode, setEditorMode] = useState<"ai_edit" | "manual">(initialEditorMode);
   const [editorInitialValues, setEditorInitialValues] = useState<WateringPlanFormValues>(buildDefaultFormValues());
   const [editorSource, setEditorSource] = useState<WateringPlanSourceVm>({ type: "manual" });
   const [isRedirecting, setIsRedirecting] = useState(false);
@@ -345,8 +352,15 @@ export const PlantWateringPlanView: FC<PlantWateringPlanViewProps> = ({
   const handleBackFromEditor = useCallback(() => {
     if (isBusy) return;
     clearError();
+    if (source === "detail") {
+      if (typeof window !== "undefined") {
+        const target = plantId ? `/plants/${plantId}` : "/plants";
+        window.location.assign(target);
+      }
+      return;
+    }
     setCurrentMode("suggest");
-  }, [clearError, isBusy]);
+  }, [clearError, isBusy, plantId, source]);
 
   const handleEditorSubmit = useCallback(
     async (values: WateringPlanFormValues) => {

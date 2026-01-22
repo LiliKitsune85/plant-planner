@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { CreatePlantFormValues } from "./types";
-import { sanitizeCreatePlantValues, validateCreatePlant } from "./validation";
+import { mergeFieldErrorsFromDetails, sanitizeCreatePlantValues, validateCreatePlant } from "./validation";
 
 const buildValues = (overrides: Partial<CreatePlantFormValues> = {}): CreatePlantFormValues => ({
   species_name: "Epipremnum aureum",
@@ -47,5 +47,12 @@ describe("sanitizeCreatePlantValues", () => {
   it("keeps valid ISO date intact", () => {
     const sanitized = sanitizeCreatePlantValues(buildValues({ purchase_date: "2024-02-10" }));
     expect(sanitized.purchase_date).toBe("2024-02-10");
+  });
+});
+
+describe("mergeFieldErrorsFromDetails", () => {
+  it("maps string issue paths to fields", () => {
+    const merged = mergeFieldErrorsFromDetails({}, { issues: [{ path: "species_name", message: "Invalid value" }] });
+    expect(merged.species_name?.[0]).toContain("Invalid value");
   });
 });

@@ -64,14 +64,19 @@ const createPlantBodySchema = z
       .union([photoPathSchema, z.null()])
       .optional()
       .transform((value) => value ?? null),
-    generate_watering_suggestion: z.boolean().optional().default(false),
+    generate_watering_suggestion: z.boolean().optional().default(true),
   })
   .strict();
 
 export const parseCreatePlantRequest = (body: unknown): CreatePlantCommand => {
   const parsed = createPlantBodySchema.safeParse(body);
   if (!parsed.success) {
-    throw new HttpError(400, "Invalid request body", "VALIDATION_ERROR");
+    const issues = parsed.error.issues.map((issue) => ({
+      path: issue.path.length > 0 ? issue.path.join(".") : "(body)",
+      message: issue.message,
+      code: issue.code,
+    }));
+    throw new HttpError(422, "Invalid request body", "VALIDATION_ERROR", { issues });
   }
 
   return parsed.data;

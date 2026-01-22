@@ -1,4 +1,4 @@
-import type { MeResponseDto, SignInCommand } from "@/types";
+import type { MeResponseDto, SignInCommand, SignUpCommand, SignUpResultDto } from "@/types";
 
 interface ApiErrorPayload {
   code: string;
@@ -160,6 +160,44 @@ export const signIn = async (credentials: SignInCommand, options: SignInOptions 
       "Content-Type": "application/json",
     },
     body: JSON.stringify(credentials),
+    signal: options.signal,
+  });
+
+  const requestId = detectRequestId(envelope.meta ?? null);
+
+  if (!response.ok || envelope.error || !envelope.data) {
+    const errorPayload = envelope.error ?? {
+      code: "HTTP_ERROR",
+      message: `Żądanie nie powiodło się (status ${response.status}).`,
+    };
+
+    const fieldErrors = extractFieldErrors(errorPayload.details);
+
+    throw new AuthApiError(errorPayload.code, errorPayload.message, {
+      status: response.status,
+      requestId,
+      details: errorPayload.details,
+      fieldErrors,
+      kind: determineErrorKind(response.status, errorPayload.code),
+    });
+  }
+
+  return envelope.data;
+};
+
+interface SignUpOptions {
+  signal?: AbortSignal;
+}
+
+type SignUpPayload = SignUpCommand & { returnTo?: string };
+
+export const signUp = async (payload: SignUpPayload, options: SignUpOptions = {}): Promise<SignUpResultDto> => {
+  const { response, envelope } = await requestAuthApi<SignUpResultDto>("/api/auth/sign-up", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
     signal: options.signal,
   });
 

@@ -10,6 +10,22 @@ const DeleteWateringTaskQuerySchema = z.object({
   confirm: z.literal("true"),
 });
 
+interface ValidationIssue {
+  path: string;
+  message: string;
+  code: string;
+}
+
+const formatZodIssues = (issues: z.ZodIssue[]): ValidationIssue[] =>
+  issues.map((issue) => ({
+    path: issue.path.length > 0 ? issue.path.join(".") : "(body)",
+    message: issue.message,
+    code: issue.code,
+  }));
+
+const toValidationError = (message: string, error: z.ZodError) =>
+  new HttpError(422, message, "VALIDATION_ERROR", { issues: formatZodIssues(error.issues) });
+
 export type DeleteWateringTaskParams = z.infer<typeof DeleteWateringTaskParamsSchema>;
 export type DeleteWateringTaskQuery = z.infer<typeof DeleteWateringTaskQuerySchema>;
 export type DeleteWateringTaskRequest = DeleteWateringTaskParams & DeleteWateringTaskQuery;
@@ -23,7 +39,7 @@ export const parseDeleteWateringTaskRequest = (
   });
 
   if (!parsedParams.success) {
-    throw new HttpError(400, "Invalid taskId", "INVALID_TASK_ID");
+    throw toValidationError("Invalid taskId", parsedParams.error);
   }
 
   const parsedQuery = DeleteWateringTaskQuerySchema.safeParse({

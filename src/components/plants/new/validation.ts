@@ -73,7 +73,7 @@ export const sanitizeCreatePlantValues = (values: CreatePlantFormValues): Create
 interface IssueDetails {
   issues?: {
     message?: string;
-    path?: (string | number)[];
+    path?: (string | number)[] | string;
   }[];
 }
 
@@ -82,9 +82,11 @@ interface FieldDetails {
   message?: string;
 }
 
-const mapIssuePathToField = (path: (string | number)[] | undefined): CreatePlantFormField => {
-  if (!path || path.length === 0) return "form";
-  const [first] = path;
+const mapIssuePathToField = (path: (string | number)[] | string | undefined): CreatePlantFormField => {
+  if (!path) return "form";
+  const pathSegments = typeof path === "string" ? path.split(".") : path;
+  if (pathSegments.length === 0) return "form";
+  const [first] = pathSegments;
   if (
     first === "species_name" ||
     first === "nickname" ||

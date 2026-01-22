@@ -6,6 +6,7 @@ interface CalendarDayTaskListProps {
   items: CalendarDayTaskVm[];
   pendingByTaskId?: Record<string, boolean>;
   highlightPlantId?: string;
+  disableConfirm?: boolean;
   onConfirm?: (task: CalendarDayTaskVm) => void;
   onUndo?: (task: CalendarDayTaskVm) => void;
   onEdit?: (task: CalendarDayTaskVm) => void;
@@ -18,6 +19,7 @@ export const CalendarDayTaskList = ({
   items,
   pendingByTaskId = EMPTY_PENDING_MAP,
   highlightPlantId,
+  disableConfirm = false,
   onConfirm,
   onUndo,
   onEdit,
@@ -30,6 +32,7 @@ export const CalendarDayTaskList = ({
         task={task}
         isPending={Boolean(pendingByTaskId[task.id])}
         isHighlighted={Boolean(highlightPlantId && task.plantId === highlightPlantId)}
+        disableConfirm={disableConfirm}
         onConfirm={onConfirm}
         onUndo={onUndo}
         onEdit={onEdit}

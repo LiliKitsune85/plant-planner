@@ -10,11 +10,18 @@ export const PlantsListHeader = () => {
           Wyszukuj, sortuj i przechodź do szczegółów każdej rośliny w jednym miejscu.
         </p>
       </div>
-      <Button asChild size="lg" className="w-full sm:w-auto">
-        <a href="/plants/new" data-testid="plants-add-plant-button">
-          Dodaj roślinę
-        </a>
-      </Button>
+      <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+        <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
+          <a href="/calendar" data-testid="plants-back-to-calendar-button">
+            Wróć do kalendarza
+          </a>
+        </Button>
+        <Button asChild size="lg" className="w-full sm:w-auto">
+          <a href="/plants/new" data-testid="plants-add-plant-button">
+            Dodaj roślinę
+          </a>
+        </Button>
+      </div>
     </header>
   );
 };

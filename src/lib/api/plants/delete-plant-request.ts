@@ -11,6 +11,22 @@ const deletePlantQuerySchema = z.object({
   confirm: z.literal("true"),
 });
 
+interface ValidationIssue {
+  path: string;
+  message: string;
+  code: string;
+}
+
+const formatZodIssues = (issues: z.ZodIssue[]): ValidationIssue[] =>
+  issues.map((issue) => ({
+    path: issue.path.length > 0 ? issue.path.join(".") : "(body)",
+    message: issue.message,
+    code: issue.code,
+  }));
+
+const toValidationError = (message: string, error: z.ZodError) =>
+  new HttpError(422, message, "VALIDATION_ERROR", { issues: formatZodIssues(error.issues) });
+
 export type DeletePlantParams = z.infer<typeof deletePlantParamsSchema>;
 export type DeletePlantQuery = z.infer<typeof deletePlantQuerySchema>;
 
@@ -25,7 +41,7 @@ export const parseDeletePlantRequest = (
   });
 
   if (!parsedParams.success) {
-    throw new HttpError(400, "Invalid plantId", "INVALID_PLANT_ID");
+    throw toValidationError("Invalid plantId", parsedParams.error);
   }
 
   const parsedQuery = deletePlantQuerySchema.safeParse({
