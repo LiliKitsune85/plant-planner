@@ -75,10 +75,7 @@ const mapCreationAvailable = (
 });
 
 const buildCreationErrorState = (
-  suggestion: Extract<
-    WateringSuggestionForCreationDto,
-    { status: "timeout" | "provider_error" | "unknown_error" }
-  >
+  suggestion: Extract<WateringSuggestionForCreationDto, { status: "timeout" | "provider_error" | "unknown_error" }>
 ): AiSuggestionErrorVm => {
   if (suggestion.status === "timeout") {
     return {

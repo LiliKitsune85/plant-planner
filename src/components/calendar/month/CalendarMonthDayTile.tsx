@@ -37,7 +37,6 @@ export const CalendarMonthDayTile = ({ day }: CalendarMonthDayTileProps) => {
           {badge}
         </div>
       ) : null}
-
     </a>
   );
 };

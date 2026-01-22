@@ -232,10 +232,14 @@ export const POST: APIRoute = async ({ locals, request, url }) => {
 
     const result: CreatePlantResultDto = { plant, watering_suggestion };
 
-    return json(201, { data: result, error: null, meta: { request_id: requestId } }, {
-      ...baseHeaders,
-      Location: new URL(`/api/plants/${plant.id}`, url).toString(),
-    });
+    return json(
+      201,
+      { data: result, error: null, meta: { request_id: requestId } },
+      {
+        ...baseHeaders,
+        Location: new URL(`/api/plants/${plant.id}`, url).toString(),
+      }
+    );
   } catch (error) {
     if (isHttpError(error)) {
       return json(

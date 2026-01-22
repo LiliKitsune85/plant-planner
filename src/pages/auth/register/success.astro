@@ -24,14 +24,16 @@ const loginHref = `/auth/login?returnTo=${encodeURIComponent(returnTo)}`;
   >
     <div class="space-y-4 text-sm text-muted-foreground">
       <p>
-        {email ? (
-          <>
-            Wysłaliśmy wiadomość na <span class="font-semibold text-foreground">{email}</span>. Jeśli nie widzisz maila,
-            sprawdź folder spam.
-          </>
-        ) : (
-          <>Sprawdź skrzynkę e-mail i folder spam, aby znaleźć wiadomość aktywacyjną.</>
-        )}
+        {
+          email ? (
+            <>
+              Wysłaliśmy wiadomość na <span class="font-semibold text-foreground">{email}</span>. Jeśli nie widzisz
+              maila, sprawdź folder spam.
+            </>
+          ) : (
+            <>Sprawdź skrzynkę e-mail i folder spam, aby znaleźć wiadomość aktywacyjną.</>
+          )
+        }
       </p>
       <div class="flex flex-wrap gap-2">
         <Button asChild>
